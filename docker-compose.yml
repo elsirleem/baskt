@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: food-store-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: foodstore
+      POSTGRES_PASSWORD: foodstore
+      POSTGRES_DB: foodstore
+    ports:
+      - "5432:5432"
+    volumes:
+      - food_store_pgdata:/var/lib/postgresql/data
+volumes:
+  food_store_pgdata:

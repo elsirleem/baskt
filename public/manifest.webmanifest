@@ -1,0 +1,16 @@
+{
+  "name": "Baskt — African essentials, delivered",
+  "short_name": "Baskt",
+  "description": "Authentic African groceries delivered across the UK. Subscribe, save, and cook with in-app recipes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafaf9",
+  "theme_color": "#047857",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}
