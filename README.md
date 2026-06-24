@@ -31,12 +31,31 @@ and check out securely with Stripe. Built as a PWA-ready Next.js web app.
 | Admin product management (CRUD) | `app/admin`, `lib/actions/admin.ts` |
 | Account dashboard (tier, credit, referrals) | `app/account/page.tsx` |
 
-## Getting started
+## Run the whole thing with Docker (easiest)
+
+One command builds the app, starts Postgres, applies the schema, seeds the
+catalogue, and serves the app at http://localhost:3000:
+
+```bash
+docker compose up --build
+```
+
+- `app` waits for the `db` healthcheck, then runs `prisma db push` + seed on first
+  boot (idempotent), then starts Next.
+- Secrets come from `.env` (`AUTH_SECRET`, `STRIPE_*`); compose overrides
+  `DATABASE_URL` so the app reaches the `db` service.
+- Stop with `docker compose down` (add `-v` to also wipe the database volume).
+
+For active development, the local workflow below (host `npm run dev` + Dockerised
+Postgres) gives faster hot-reload. The image keeps full dependencies for a reliable
+first run; slimming it with Next `output: "standalone"` is a future optimization.
+
+## Local development
 
 ### 1. Start Postgres
 
 ```bash
-docker compose up -d
+docker compose up -d db
 ```
 
 ### 2. Configure environment

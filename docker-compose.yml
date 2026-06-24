@@ -11,5 +11,31 @@ services:
       - "5432:5432"
     volumes:
       - food_store_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U foodstore -d foodstore"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+    container_name: baskt-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    # Secrets (AUTH_SECRET, STRIPE_*) come from .env; values below override the
+    # host-only ones so the app talks to the `db` service inside the network.
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://foodstore:foodstore@db:5432/foodstore?schema=public
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      AUTH_TRUST_HOST: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   food_store_pgdata:
