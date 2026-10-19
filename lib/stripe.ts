@@ -1,6 +1,7 @@
 import Stripe from "stripe";
+import { configuredEnv } from "@/lib/env";
 
-if (!process.env.STRIPE_SECRET_KEY) {
+if (!configuredEnv(process.env.STRIPE_SECRET_KEY)) {
   // Don't throw at import time during build; the checkout route guards at runtime.
   console.warn("STRIPE_SECRET_KEY is not set — checkout will fail until configured.");
 }

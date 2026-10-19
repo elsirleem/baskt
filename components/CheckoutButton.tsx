@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { buttonClass } from "@/components/ui";
 
-export function CheckoutButton() {
+export function CheckoutButton({ label = "Checkout securely" }: { label?: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,11 +30,11 @@ export function CheckoutButton() {
         type="button"
         onClick={handleCheckout}
         disabled={loading}
-        className="w-full rounded-md bg-emerald-600 px-4 py-3 font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+        className={`${buttonClass.primary} w-full py-4 text-base`}
       >
-        {loading ? "Redirecting to secure checkout…" : "Checkout securely"}
+        {loading ? "Redirecting to secure checkout…" : label}
       </button>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
     </div>
   );
 }

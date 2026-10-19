@@ -1,49 +1,57 @@
 import Link from "next/link";
 import { getCurrentUserId, getUserTier } from "@/lib/data";
-import { TIER_LABEL } from "@/lib/pricing";
+import { formatPrice } from "@/lib/utils";
 import { SubscribeButton, ManageBillingButton } from "@/components/BillingButtons";
+import { PageTitle, buttonClass } from "@/components/ui";
 
-export const metadata = { title: "Membership — Baskt" };
+export const metadata = { title: "Plans" };
+
+const MONTHLY_CENTS = 499;
+const PLUS_YEARLY_CENTS = 3999;
 
 const TIERS = [
   {
     key: "PAYG" as const,
-    name: "Pay as you go",
+    name: "Pay As You Go",
     price: "Free",
-    cadence: "",
+    period: "No commitment",
     perks: [
-      "Browse the full catalogue",
       "Free delivery on orders over £70",
+      "Full product catalogue",
       "In-app recipes",
     ],
     cta: null,
   },
   {
     key: "MONTHLY" as const,
-    name: "Baskt Monthly",
-    price: "£4.99",
-    cadence: "/month",
+    name: "AfroBasic",
+    price: formatPrice(MONTHLY_CENTS),
+    period: "per month · billed monthly",
     perks: [
-      "5% off every order",
+      "5% off all orders",
       "Priority dispatch",
-      "Free delivery over £70",
-      "Everything in Pay as you go",
+      "Free delivery on orders over £70",
+      "Everything in Pay As You Go",
     ],
-    cta: { tier: "MONTHLY" as const, label: "Subscribe monthly", variant: "secondary" as const },
+    cta: { tier: "MONTHLY" as const, label: "Select monthly", variant: "secondary" as const },
   },
   {
     key: "PLUS" as const,
-    name: "Baskt Plus",
-    price: "£39.99",
-    cadence: "/year",
+    name: "AfroPlus ⭐",
+    price: formatPrice(PLUS_YEARLY_CENTS),
+    period: `per year · saves ${formatPrice(MONTHLY_CENTS * 12 - PLUS_YEARLY_CENTS)} vs monthly`,
     highlight: true,
     perks: [
-      "10% off every order",
-      "Free delivery — always, no minimum",
+      "10% off ALL orders",
+      "Free delivery on every order",
       "Premium recipe library",
       "Personal shopper",
     ],
-    cta: { tier: "PLUS" as const, label: "Go Plus — best value", variant: "primary" as const },
+    cta: {
+      tier: "PLUS" as const,
+      label: `Get AfroPlus — ${formatPrice(PLUS_YEARLY_CENTS)}/yr`,
+      variant: "primary" as const,
+    },
   },
 ];
 
@@ -53,51 +61,52 @@ export default async function MembershipPage() {
 
   return (
     <div>
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold">Become a member</h1>
-        <p className="mt-2 text-stone-600">
-          Save on every order, unlock free delivery, and cook more with premium recipes.
-        </p>
-        {userId && (
-          <p className="mt-2 text-sm text-stone-500">
-            Your current plan: <strong>{TIER_LABEL[currentTier]}</strong>
-          </p>
-        )}
-      </div>
+      <PageTitle subtitle="Save more, get more. Cancel any time.">Choose Your Plan ⭐</PageTitle>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3 md:gap-6">
         {TIERS.map((tier) => {
           const isCurrent = currentTier === tier.key;
           return (
             <div
               key={tier.key}
-              className={`flex flex-col rounded-xl border bg-white p-6 ${
-                tier.highlight ? "border-emerald-600 ring-1 ring-emerald-600" : "border-stone-200"
+              className={`flex flex-col rounded-2xl border-2 p-5 ${
+                tier.highlight ? "border-brand bg-brand-pale" : "border-line bg-white"
               }`}
             >
-              {tier.highlight && (
-                <span className="mb-2 self-start rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
-                  Most popular
-                </span>
-              )}
-              <h2 className="text-lg font-semibold">{tier.name}</h2>
-              <p className="mt-2">
-                <span className="text-3xl font-bold">{tier.price}</span>
-                <span className="text-stone-500">{tier.cadence}</span>
+              <div className="mb-2.5 flex items-start justify-between gap-2">
+                <h2 className="font-display text-[17px] font-bold text-ink">{tier.name}</h2>
+                {tier.highlight && (
+                  <span className="rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold uppercase text-white">
+                    Best value
+                  </span>
+                )}
+              </div>
+              <p
+                className={`font-display text-[28px] font-black leading-tight ${
+                  tier.key === "PAYG" ? "text-ink-mid" : "text-brand"
+                }`}
+              >
+                {tier.price}
               </p>
-              <ul className="mt-4 flex-1 space-y-2 text-sm text-stone-600">
+              <p className="mb-3 text-xs text-ink-soft">{tier.period}</p>
+
+              <ul className="flex-1 space-y-1.5">
                 {tier.perks.map((perk) => (
-                  <li key={perk} className="flex gap-2">
-                    <span className="text-emerald-600">✓</span>
+                  <li key={perk} className="flex items-center gap-2 text-[13px] text-ink-mid">
+                    <span className="text-[15px] font-bold text-brand" aria-hidden="true">
+                      ✓
+                    </span>
                     {perk}
                   </li>
                 ))}
               </ul>
 
-              <div className="mt-6">
+              <div className="mt-4">
                 {isCurrent ? (
                   tier.key === "PAYG" ? (
-                    <p className="text-center text-sm text-stone-500">Your current plan</p>
+                    <p className="rounded-xl border-2 border-line py-3 text-center text-sm font-semibold text-ink-soft">
+                      Current plan
+                    </p>
                   ) : (
                     <ManageBillingButton />
                   )
@@ -111,13 +120,17 @@ export default async function MembershipPage() {
                   ) : (
                     <Link
                       href="/login"
-                      className="block w-full rounded-md bg-emerald-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-emerald-700"
+                      className={`${
+                        tier.cta.variant === "primary" ? buttonClass.primary : buttonClass.outline
+                      } w-full`}
                     >
                       Sign in to subscribe
                     </Link>
                   )
                 ) : (
-                  <p className="text-center text-sm text-stone-400">No commitment</p>
+                  <p className="py-3 text-center text-xs text-ink-soft">
+                    Cancel your plan any time to switch back.
+                  </p>
                 )}
               </div>
             </div>
@@ -125,8 +138,8 @@ export default async function MembershipPage() {
         })}
       </div>
 
-      <p className="mt-8 text-center text-xs text-stone-400">
-        Billing is handled securely by Stripe. Cancel anytime from your account.
+      <p className="mt-6 text-center text-xs text-ink-soft">
+        Billing is handled securely by Stripe. Cancel anytime from your profile.
       </p>
     </div>
   );

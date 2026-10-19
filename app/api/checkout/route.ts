@@ -4,7 +4,8 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId, getCart, getAccount } from "@/lib/data";
 import { computeTotals } from "@/lib/pricing";
-import { ensureStripeCustomer } from "@/lib/billing";
+import { productLabel } from "@/lib/utils";
+import { ensureStripeCustomer, isStripeConfigured } from "@/lib/billing";
 
 export async function POST() {
   const userId = await getCurrentUserId();
@@ -12,7 +13,7 @@ export async function POST() {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes("replace_me")) {
+  if (!isStripeConfigured()) {
     return NextResponse.json(
       { error: "Stripe is not configured. Add STRIPE_SECRET_KEY to .env." },
       { status: 500 },
@@ -49,7 +50,7 @@ export async function POST() {
           productId: item.productId,
           quantity: item.quantity,
           unitPriceCents: item.product.priceCents,
-          nameSnapshot: item.product.name,
+          nameSnapshot: productLabel(item.product),
         })),
       },
     },
@@ -65,7 +66,7 @@ export async function POST() {
           currency,
           unit_amount: item.product.priceCents,
           product_data: {
-            name: item.product.name,
+            name: productLabel(item.product),
             images: [item.product.imageUrl],
           },
         },
@@ -92,7 +93,7 @@ export async function POST() {
         amount_off: savingsCents,
         currency,
         duration: "once",
-        name: "Baskt savings",
+        name: "AfroPantry savings",
       });
       discounts = [{ coupon: coupon.id }];
     }
@@ -102,6 +103,11 @@ export async function POST() {
       customer: customerId,
       line_items,
       discounts,
+      // We deliver within the UK only; the address is saved on the order when paid.
+      shipping_address_collection: { allowed_countries: ["GB"] },
+      phone_number_collection: { enabled: true },
+      // Save the address on the Stripe customer so it's prefilled next time.
+      customer_update: { shipping: "auto" },
       success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/cart`,
       client_reference_id: order.id,

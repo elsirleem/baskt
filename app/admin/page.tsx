@@ -10,9 +10,9 @@ export default async function AdminProductsPage() {
   const products = await prisma.product.findMany({ orderBy: { createdAt: "asc" } });
 
   return (
-    <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
-      <table className="w-full text-sm">
-        <thead className="border-b border-stone-200 bg-stone-50 text-left text-stone-500">
+    <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+      <table className="w-full min-w-[640px] text-sm">
+        <thead className="border-b border-line bg-cream text-left text-ink-soft">
           <tr>
             <th className="px-4 py-3 font-medium">Product</th>
             <th className="px-4 py-3 font-medium">Category</th>
@@ -21,12 +21,12 @@ export default async function AdminProductsPage() {
             <th className="px-4 py-3 text-right font-medium">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-stone-100">
+        <tbody className="divide-y divide-line">
           {products.map((product) => (
             <tr key={product.id}>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded border border-stone-200">
+                  <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-brand-pale">
                     <Image
                       src={product.imageUrl}
                       alt={product.name}
@@ -35,17 +35,24 @@ export default async function AdminProductsPage() {
                       className="object-cover"
                     />
                   </div>
-                  <span className="font-medium text-stone-800">{product.name}</span>
+                  <div>
+                    <p className="font-medium text-ink">{product.name}</p>
+                    <p className="text-xs text-ink-soft">
+                      {[product.size, product.isPrivateLabel ? "Our Brand" : null]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
                 </div>
               </td>
-              <td className="px-4 py-3 text-stone-600">{product.category}</td>
+              <td className="px-4 py-3 text-ink-mid">{product.category}</td>
               <td className="px-4 py-3">{formatPrice(product.priceCents, product.currency)}</td>
-              <td className="px-4 py-3 text-stone-600">{product.stock}</td>
+              <td className="px-4 py-3 text-ink-mid">{product.stock}</td>
               <td className="px-4 py-3">
                 <div className="flex items-center justify-end gap-4">
                   <Link
                     href={`/admin/products/${product.id}`}
-                    className="text-sm text-emerald-700 hover:underline"
+                    className="text-sm font-semibold text-brand hover:underline"
                   >
                     Edit
                   </Link>
@@ -58,7 +65,7 @@ export default async function AdminProductsPage() {
       </table>
 
       {products.length === 0 && (
-        <p className="px-4 py-8 text-center text-stone-500">
+        <p className="px-4 py-8 text-center text-ink-soft">
           No products yet. Create one to get started.
         </p>
       )}

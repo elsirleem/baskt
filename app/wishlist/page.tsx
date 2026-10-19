@@ -7,8 +7,9 @@ import {
   MoveToCartButton,
   RemoveFromWishlistButton,
 } from "@/components/WishlistControls";
+import { BackLink, EmptyState, PageTitle, cardClass } from "@/components/ui";
 
-export const metadata = { title: "Your wishlist — Baskt" };
+export const metadata = { title: "Your wishlist" };
 
 export default async function WishlistPage() {
   const userId = await getCurrentUserId();
@@ -18,55 +19,52 @@ export default async function WishlistPage() {
 
   if (items.length === 0) {
     return (
-      <div className="py-16 text-center">
-        <h1 className="text-2xl font-bold">Your wishlist is empty</h1>
-        <p className="mt-2 text-stone-600">
-          Tap the ♡ on any product to save it for later.
-        </p>
-        <Link
-          href="/"
-          className="mt-6 inline-block rounded-md bg-emerald-600 px-5 py-2.5 font-medium text-white hover:bg-emerald-700"
-        >
-          Browse catalogue
-        </Link>
-      </div>
+      <EmptyState
+        icon="🤍"
+        title="Your wishlist is empty"
+        text="Tap the heart on any product to save it for later."
+        cta={{ href: "/", label: "Browse the shop" }}
+      />
     );
   }
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold">Your wishlist</h1>
-      <ul className="divide-y divide-stone-200">
+    <div className="mx-auto max-w-3xl">
+      <BackLink href="/account" label="Profile" />
+      <PageTitle>Your Wishlist 🤍</PageTitle>
+
+      <ul className="space-y-3">
         {items.map((item) => (
-          <li key={item.id} className="flex items-center gap-4 py-4">
+          <li key={item.id} className={`${cardClass} flex items-center gap-3 p-3.5`}>
             <Link
               href={`/product/${item.product.slug}`}
-              className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-stone-200"
+              className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-brand-pale"
             >
               <Image
                 src={item.product.imageUrl}
                 alt={item.product.name}
                 fill
-                sizes="80px"
+                sizes="56px"
                 className="object-cover"
               />
             </Link>
 
-            <div className="flex flex-1 flex-col">
+            <div className="min-w-0 flex-1">
               <Link
                 href={`/product/${item.product.slug}`}
-                className="font-medium hover:text-emerald-700"
+                className="line-clamp-1 text-sm font-semibold text-ink hover:text-brand"
               >
                 {item.product.name}
               </Link>
-              <span className="text-sm text-stone-500">
-                {formatPrice(item.product.priceCents, item.product.currency)}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <MoveToCartButton productId={item.productId} />
-              <RemoveFromWishlistButton productId={item.productId} />
+              <p className="text-xs text-ink-soft">
+                {[item.product.size, formatPrice(item.product.priceCents, item.product.currency)]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+              <div className="mt-1.5 flex items-center gap-3">
+                <MoveToCartButton productId={item.productId} />
+                <RemoveFromWishlistButton productId={item.productId} />
+              </div>
             </div>
           </li>
         ))}

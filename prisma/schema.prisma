@@ -80,8 +80,10 @@ model Product {
   currency       String   @default("gbp")
   imageUrl       String
   category       String
-  brand          String? // brand / source, e.g. "Baskt Private Label"
+  brand          String? // brand / source, e.g. "AfroPantry Private Label"
   isPrivateLabel Boolean  @default(false)
+  size           String? // pack size shown under the name, e.g. "1kg", "5-pack"
+  badges         String[] @default([]) // short highlights, e.g. "Co-op sourced"
   stock          Int      @default(100)
   createdAt      DateTime @default(now())
 
@@ -132,6 +134,14 @@ model Order {
   totalCents         Int
   currency           String      @default("gbp")
   stripeSessionId    String?     @unique
+  // delivery details collected by Stripe Checkout, saved when the order is paid
+  shippingName       String?
+  shippingPhone      String?
+  shippingLine1      String?
+  shippingLine2      String?
+  shippingCity       String?
+  shippingPostcode   String?
+  shippingCountry    String?
   createdAt          DateTime    @default(now())
   user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items              OrderItem[]
@@ -158,6 +168,7 @@ model Recipe {
   steps       String[]
   servings    Int                @default(4)
   minutes     Int                @default(45)
+  difficulty  String             @default("Medium") // Easy | Medium | Hard
   isPremium   Boolean            @default(false) // Plus-only recipe
   createdAt   DateTime           @default(now())
   ingredients RecipeIngredient[]
@@ -167,7 +178,8 @@ model RecipeIngredient {
   id        String   @id @default(cuid())
   recipeId  String
   productId String? // tappable link to a stocked product (null for pantry basics)
-  label     String // display text, e.g. "2 cups long-grain rice"
+  label     String // ingredient name, e.g. "Long grain rice"
+  amount    String? // quantity, e.g. "2 cups" (null for "to taste" items)
   sortOrder Int      @default(0)
   recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)

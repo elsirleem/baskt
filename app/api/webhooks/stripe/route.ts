@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
-import { finalizeOrderPaid } from "@/lib/orders";
+import { finalizeOrderPaid, shippingFromSession } from "@/lib/orders";
 import { syncStripeSubscription } from "@/lib/subscription";
+import { configuredEnv } from "@/lib/env";
 
 export async function POST(request: Request) {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!webhookSecret || webhookSecret.includes("replace_me")) {
+  const webhookSecret = configuredEnv(process.env.STRIPE_WEBHOOK_SECRET);
+  if (!webhookSecret) {
     return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
   }
 
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       // One-off product orders carry an orderId; subscription checkouts don't.
       if (session.mode === "payment" && session.metadata?.orderId) {
-        await finalizeOrderPaid(session.metadata.orderId);
+        await finalizeOrderPaid(session.metadata.orderId, shippingFromSession(session));
       } else if (session.mode === "subscription" && session.subscription) {
         await syncStripeSubscription(String(session.subscription));
       }

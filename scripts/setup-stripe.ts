@@ -1,14 +1,15 @@
 import "dotenv/config";
 import Stripe from "stripe";
+import { configuredEnv } from "../lib/env";
 
 /**
- * Creates the Baskt membership products + recurring prices in your Stripe TEST
+ * Creates the AfroPantry membership products + recurring prices in your Stripe TEST
  * account, then prints the price IDs to put in .env. Idempotent-ish: re-running
  * creates new prices, so only run once (or archive old ones in the dashboard).
  */
 async function main() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key || key.includes("replace_me")) {
+  const key = configuredEnv(process.env.STRIPE_SECRET_KEY);
+  if (!key) {
     console.error("Set a real STRIPE_SECRET_KEY (test mode) in .env first.");
     process.exit(1);
   }
@@ -18,14 +19,14 @@ async function main() {
     currency: "gbp",
     unit_amount: 499,
     recurring: { interval: "month" },
-    product_data: { name: "Baskt Monthly" },
+    product_data: { name: "AfroBasic" },
   });
 
   const plus = await stripe.prices.create({
     currency: "gbp",
     unit_amount: 3999,
     recurring: { interval: "year" },
-    product_data: { name: "Baskt Plus" },
+    product_data: { name: "AfroPlus" },
   });
 
   // Fresh Produce Box sizes (monthly).
@@ -33,19 +34,19 @@ async function main() {
     currency: "gbp",
     unit_amount: 2500,
     recurring: { interval: "month" },
-    product_data: { name: "Baskt Fresh Box — Small" },
+    product_data: { name: "AfroPantry Fresh Box — Small" },
   });
   const freshMedium = await stripe.prices.create({
     currency: "gbp",
     unit_amount: 3200,
     recurring: { interval: "month" },
-    product_data: { name: "Baskt Fresh Box — Medium" },
+    product_data: { name: "AfroPantry Fresh Box — Medium" },
   });
   const freshLarge = await stripe.prices.create({
     currency: "gbp",
     unit_amount: 4000,
     recurring: { interval: "month" },
-    product_data: { name: "Baskt Fresh Box — Large" },
+    product_data: { name: "AfroPantry Fresh Box — Large" },
   });
 
   console.log("\n✅ Created prices. Add these to your .env:\n");

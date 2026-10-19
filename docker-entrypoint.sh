@@ -14,5 +14,5 @@ done
 echo "→ Seeding catalogue (idempotent)..."
 npm run db:seed || echo "  seed step reported an issue; continuing to start the app."
 
-echo "→ Starting Baskt on port ${PORT:-3000}..."
+echo "→ Starting AfroPantry on port ${PORT:-3000}..."
 exec "$@"

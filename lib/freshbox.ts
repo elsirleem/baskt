@@ -1,4 +1,5 @@
 import type { FreshBoxSize } from "@prisma/client";
+import { configuredEnv } from "@/lib/env";
 
 /** Box sizes, their monthly price, and what's inside. */
 export const FRESH_BOX_SIZES: Record<
@@ -9,26 +10,26 @@ export const FRESH_BOX_SIZES: Record<
     label: "Small",
     priceCents: 2500,
     blurb: "A starter box — seasonal fruit & veg for 1–2 people.",
-    priceEnv: process.env.STRIPE_PRICE_FRESH_SMALL,
+    priceEnv: configuredEnv(process.env.STRIPE_PRICE_FRESH_SMALL),
   },
   MEDIUM: {
     label: "Medium",
     priceCents: 3200,
     blurb: "Our most popular — fruit, veg & British beef cuts for a family.",
-    priceEnv: process.env.STRIPE_PRICE_FRESH_MEDIUM,
+    priceEnv: configuredEnv(process.env.STRIPE_PRICE_FRESH_MEDIUM),
   },
   LARGE: {
     label: "Large",
     priceCents: 4000,
     blurb: "The full table — generous seasonal produce & premium cuts.",
-    priceEnv: process.env.STRIPE_PRICE_FRESH_LARGE,
+    priceEnv: configuredEnv(process.env.STRIPE_PRICE_FRESH_LARGE),
   },
 };
 
 export const FRESH_PRICE_ENV: Record<FreshBoxSize, string | undefined> = {
-  SMALL: process.env.STRIPE_PRICE_FRESH_SMALL,
-  MEDIUM: process.env.STRIPE_PRICE_FRESH_MEDIUM,
-  LARGE: process.env.STRIPE_PRICE_FRESH_LARGE,
+  SMALL: configuredEnv(process.env.STRIPE_PRICE_FRESH_SMALL),
+  MEDIUM: configuredEnv(process.env.STRIPE_PRICE_FRESH_MEDIUM),
+  LARGE: configuredEnv(process.env.STRIPE_PRICE_FRESH_LARGE),
 };
 
 /** Map a Stripe price id back to a box size. */

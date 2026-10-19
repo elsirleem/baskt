@@ -1,33 +1,38 @@
 "use client";
 
 import { useState } from "react";
+import { rowClass } from "@/components/ui";
 
-export function ReferralCard({ link }: { link: string }) {
+/** Profile row that shares the referral link (native share sheet, or copy as a fallback). */
+export function ReferralShareRow({ link, rewardLabel }: { link: string; rewardLabel: string }) {
   const [copied, setCopied] = useState(false);
 
+  const share = async () => {
+    const text = `Get African essentials delivered with AfroPantry — we both get ${rewardLabel} credit when you place your first order.`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "AfroPantry", text, url: link });
+        return;
+      } catch {
+        // Share sheet dismissed or unavailable — fall back to copying.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard blocked; the link is also shown under the row.
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-2 sm:flex-row">
-      <input
-        readOnly
-        value={link}
-        onFocus={(e) => e.currentTarget.select()}
-        className="w-full rounded-md border border-stone-300 bg-stone-50 px-3 py-2 text-sm text-stone-700"
-      />
-      <button
-        type="button"
-        onClick={async () => {
-          try {
-            await navigator.clipboard.writeText(link);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          } catch {
-            // clipboard blocked — the field is selectable as a fallback
-          }
-        }}
-        className="shrink-0 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-      >
-        {copied ? "Copied!" : "Copy link"}
-      </button>
-    </div>
+    <button type="button" onClick={share} className={rowClass}>
+      <span className="w-7 text-center text-xl" aria-hidden="true">
+        👥
+      </span>
+      <span className="flex-1 text-sm text-ink">Refer a friend — earn {rewardLabel}</span>
+      <span className="text-xs font-bold text-gold-dark">{copied ? "Link copied!" : "Share"}</span>
+    </button>
   );
 }

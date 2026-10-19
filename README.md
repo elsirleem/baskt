@@ -1,13 +1,15 @@
-# 🧺 Baskt — Taste of home. African essentials, delivered.
+# 🧺 AfroPantry — Taste of home. African essentials, delivered.
 
 A subscription-first African grocery platform for the UK diaspora: browse authentic
 staples, subscribe for member savings, cook with in-app recipes, refer friends for credit,
-and check out securely with Stripe. Built as a PWA-ready Next.js web app.
+and check out securely with Stripe. Built as a PWA-ready Next.js web app with a
+mobile-first design: phones get an app-style layout with a bottom tab bar, wider screens
+get a top menu.
 
 ## Stack
 
 - **Next.js 16** (App Router, Server Components, Server Actions) + TypeScript, PWA manifest
-- **Tailwind CSS v4**
+- **Tailwind CSS v4** — design tokens (colours, Fraunces + DM Sans fonts) in `app/globals.css`
 - **PostgreSQL** + **Prisma 7** (via the `@prisma/adapter-pg` driver adapter)
 - **Auth.js (NextAuth v5)** — email/password credentials, bcrypt-hashed, JWT sessions
 - **Stripe** — one-off **Checkout** for baskets + recurring **Billing** for memberships, webhooks
@@ -16,20 +18,21 @@ and check out securely with Stripe. Built as a PWA-ready Next.js web app.
 
 | Feature | Where |
 | --- | --- |
-| Catalogue: 28 African SKUs (6 Baskt private-label), search, category filter | `app/page.tsx`, `lib/data.ts` |
-| Product detail pages | `app/product/[slug]/page.tsx` |
-| Accounts: register / sign in / sign out | `app/login`, `app/register`, `lib/auth.ts` |
-| Basket: add / update qty / remove, GBP, member pricing | `app/cart`, `lib/actions/cart.ts` |
+| Catalogue: 28 African SKUs (7 AfroPantry private-label), pack sizes, badges, search, category tiles | `app/page.tsx`, `lib/data.ts` |
+| Product pages: quantity picker, "Use in these recipes" links | `app/product/[slug]/page.tsx` |
+| Accounts: register / sign in / sign out, settings (name, password) | `app/login`, `app/register`, `app/account/settings`, `lib/auth.ts` |
+| Basket: add / update qty / remove, GBP, member pricing, free-delivery progress bar | `app/cart`, `lib/actions/cart.ts` |
 | Wishlist | `app/wishlist`, `lib/actions/wishlist.ts` |
-| **Membership tiers** (PAYG / Monthly £4.99 / Plus £39.99-yr) via Stripe Billing | `app/membership`, `lib/billing.ts`, `lib/subscription.ts` |
-| **Member benefits**: 5%/10% off, Plus free delivery, premium recipes | `lib/pricing.ts` |
-| **Recipe library** with tappable ingredients → basket (premium gated to Plus) | `app/recipes`, `lib/actions/cart.ts` |
+| **Membership tiers** (Pay As You Go / AfroBasic £4.99-mo / AfroPlus £39.99-yr) via Stripe Billing | `app/membership`, `lib/billing.ts`, `lib/subscription.ts` |
+| **Member benefits**: 5%/10% off, AfroPlus free delivery, premium recipes | `lib/pricing.ts` |
+| **Fresh Produce Box**: monthly subscription, 3 sizes, Mon–Wed delivery day | `app/fresh`, `lib/freshbox.ts`, `app/api/fresh/checkout` |
+| **Recipe library** with amounts, difficulty, tappable ingredients → basket (premium gated to AfroPlus) | `app/recipes`, `lib/actions/cart.ts` |
 | **Referral engine**: per-user code, £5 credit each way on first order | `lib/referral.ts`, `lib/orders.ts`, `app/account` |
 | Free delivery over £70 (always for Plus) | `lib/pricing.ts` |
-| Secure checkout + order records (discount/delivery/credit snapshot) | `app/api/checkout`, `app/api/webhooks/stripe` |
+| Secure checkout with UK delivery address + phone, order records (discount/delivery/credit/address snapshot) | `app/api/checkout`, `app/api/webhooks/stripe` |
 | Order history | `app/orders/page.tsx` |
 | Admin product management (CRUD) | `app/admin`, `lib/actions/admin.ts` |
-| Account dashboard (tier, credit, referrals) | `app/account/page.tsx` |
+| Profile (plan, stats, Fresh Box, referrals, credit) | `app/account/page.tsx` |
 
 ## Run the whole thing with Docker (easiest)
 
@@ -69,7 +72,13 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
 STRIPE_WEBHOOK_SECRET="whsec_..."     # from `stripe listen`
 STRIPE_PRICE_MONTHLY="price_..."      # from `npm run setup-stripe`
 STRIPE_PRICE_PLUS="price_..."
+STRIPE_PRICE_FRESH_SMALL="price_..."
+STRIPE_PRICE_FRESH_MEDIUM="price_..."
+STRIPE_PRICE_FRESH_LARGE="price_..."
 ```
+
+Values left as the `...` placeholders from `.env.example` are treated as unset, so the
+app shows a clear "Stripe is not configured" message instead of calling Stripe.
 
 Also generate a real auth secret with `npx auth secret` → `AUTH_SECRET`.
 
@@ -83,7 +92,7 @@ npm run db:seed    # 28 African SKUs + 4 Nigerian recipes
 ### 4. (For memberships) provision Stripe prices
 
 ```bash
-npm run setup-stripe   # creates the Monthly/Plus prices, prints the IDs to paste into .env
+npm run setup-stripe   # creates the AfroBasic/AfroPlus + Fresh Box prices, prints the IDs for .env
 ```
 
 ### 5. Run
@@ -100,8 +109,11 @@ npm run dev        # http://localhost:3000
   basket. At checkout the discount + credit become a one-time Stripe coupon so the hosted
   page shows full prices with savings applied; delivery is a line item.
 - **Orders** snapshot subtotal, discount, delivery, credit, and per-item prices at purchase.
+- **Delivery address**: Stripe Checkout collects a UK address and phone number; they're saved
+  on the order when it's paid and shown in order history (and in the Stripe Dashboard).
 - **Order finalization** (`lib/orders.ts`) is idempotent and shared by the webhook and the
-  success page: marks PAID, clears the basket, deducts credit, and pays referral rewards.
+  success page: it atomically flips the order PENDING → PAID, so even if both run at once,
+  the basket is cleared, credit deducted, and referral rewards paid exactly once.
 
 ## Memberships
 
@@ -113,11 +125,11 @@ table via `lib/subscription.ts`. Members manage or cancel through the Stripe Bil
 ## Recipes
 
 `/recipes` lists Nigerian recipes; each ingredient that maps to a stocked SKU is tappable
-(add one, or "Add all to basket"). Recipes flagged `isPremium` are gated to Baskt Plus.
+(add one, or "Add all to basket"). Recipes flagged `isPremium` are gated to AfroPlus.
 
 ## Referrals
 
-Every user gets a unique code (`/account`). Sharing `…/register?ref=CODE` links a new
+Every user gets a unique code; the Profile's "Refer a friend" row shares the link. Sharing `…/register?ref=CODE` links a new
 signup as referred. On that user's **first paid order**, both parties receive £5 credit
 (`REFERRAL_REWARD_CENTS`), applied automatically on future baskets.
 
@@ -127,7 +139,8 @@ signup as referred. On that user's **first paid order**, both parties receive £
 npm run make-admin -- you@example.com    # (also accepts multiple emails)
 ```
 
-An **Admin** link appears in the header; non-admins are redirected from `/admin`.
+An **Admin** link appears in the header (desktop) and in the Profile menu; non-admins are
+redirected from `/admin`.
 
 ## Testing payments
 
@@ -146,15 +159,18 @@ Without the CLI, the success page still confirms orders by verifying the session
 | --- | --- |
 | `npm run dev` / `build` / `start` | Dev / production build / serve |
 | `npm run db:push` / `db:seed` / `db:studio` | Schema sync / seed / Prisma Studio |
-| `npm run setup-stripe` | Create membership prices in Stripe |
+| `npm run setup-stripe` | Create membership and Fresh Box prices in Stripe |
 | `npm run make-admin -- <email>` | Promote a user to admin |
 
 ## Notes
 
 - **Platform:** built as a Next.js web app (PWA-ready via `public/manifest.webmanifest`).
-  The original Baskt plan envisions a React Native app; the backend here (data model, Stripe,
+  The original plan envisions a React Native app; the backend here (data model, Stripe,
   auth) is API-shaped and reusable if a native client is built later.
-- **Deferred from the plan:** fresh-produce monthly box scheduler, live order tracking
-  (DHL/DPD), AI restock recommendations, and WhatsApp social commerce.
+- **Not built yet** (shown in the design prototype, left out until they exist): notification
+  bell, order tracking (simple status updates or live DHL/DPD), saved delivery addresses in
+  the profile, restock reminders, and changing the Fresh Box delivery day after signup.
+- **Deferred from the plan:** fresh-box fulfilment scheduling, AI restock recommendations,
+  and WhatsApp social commerce.
 - **Prisma 7** keeps the connection in `prisma.config.ts` (not the schema) and uses a pg
   driver adapter (`lib/prisma.ts`).

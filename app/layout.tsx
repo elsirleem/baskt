@@ -1,28 +1,34 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { DM_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
+import { BottomNav } from "@/components/Navigation";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Baskt — Taste of home. African essentials, delivered.",
+  title: {
+    default: "AfroPantry — Taste of home. African essentials, delivered.",
+    template: "%s — AfroPantry",
+  },
   description:
     "Authentic African groceries delivered across the UK. Subscribe, save, and cook with in-app recipes. Free delivery over £70.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Baskt", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "AfroPantry", statusBarStyle: "default" },
 };
 
-export const viewport = {
-  themeColor: "#047857",
+export const viewport: Viewport = {
+  themeColor: "#1A6B3C",
+  // Lets the bottom tab bar sit above the iPhone home indicator.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -33,15 +39,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${dmSans.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col font-sans">
         <Header />
-        <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-8">{children}</main>
-        <footer className="border-t border-stone-200 py-6 text-center text-sm text-stone-500">
-          Baskt — Taste of home. African essentials, delivered across the UK. Demo app;
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-8 pt-2 md:px-6 md:pt-8">
+          {children}
+        </main>
+        <footer className="mb-[calc(4.5rem+env(safe-area-inset-bottom))] border-t border-line py-6 text-center text-xs text-ink-soft md:mb-0 md:text-sm">
+          AfroPantry — Taste of home. African essentials, delivered across the UK. Demo app;
           payments run in Stripe test mode.
         </footer>
+        <BottomNav />
       </body>
     </html>
   );

@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import type { Product } from "@prisma/client";
 import type { ProductFormState } from "@/lib/actions/admin";
+import { buttonClass, inputClass } from "@/components/ui";
 
 type Action = (
   prev: ProductFormState,
@@ -33,7 +34,7 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={name} className="mb-1 block text-sm font-medium">
+      <label htmlFor={name} className="mb-1.5 block text-sm font-medium text-ink-mid">
         {label}
       </label>
       <input
@@ -45,9 +46,9 @@ function Field({
         step={step}
         min={min}
         placeholder={placeholder}
-        className="w-full rounded-md border border-stone-300 px-3 py-2 outline-none focus:border-emerald-500"
+        className={inputClass}
       />
-      {hint && <p className="mt-1 text-xs text-stone-500">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-ink-soft">{hint}</p>}
     </div>
   );
 }
@@ -79,7 +80,7 @@ export function ProductForm({
       />
 
       <div>
-        <label htmlFor="description" className="mb-1 block text-sm font-medium">
+        <label htmlFor="description" className="mb-1.5 block text-sm font-medium text-ink-mid">
           Description
         </label>
         <textarea
@@ -88,7 +89,7 @@ export function ProductForm({
           required
           rows={3}
           defaultValue={product?.description}
-          className="w-full rounded-md border border-stone-300 px-3 py-2 outline-none focus:border-emerald-500"
+          className={inputClass}
         />
       </div>
 
@@ -107,6 +108,25 @@ export function ProductForm({
           name="currency"
           defaultValue={product?.currency ?? "gbp"}
           hint="3-letter code, e.g. gbp"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Field
+          label="Pack size"
+          name="size"
+          defaultValue={product?.size ?? undefined}
+          required={false}
+          placeholder="1kg"
+          hint="Shown under the name, e.g. 1kg or 5-pack."
+        />
+        <Field
+          label="Badges"
+          name="badges"
+          defaultValue={product?.badges.join(", ")}
+          required={false}
+          placeholder="Co-op sourced, Unrefined"
+          hint="Comma-separated, up to 4."
         />
       </div>
 
@@ -131,7 +151,7 @@ export function ProductForm({
       />
 
       {state?.error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-danger">
           {state.error}
         </p>
       )}
@@ -140,13 +160,13 @@ export function ProductForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-emerald-600 px-5 py-2.5 font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+          className={buttonClass.primary}
         >
           {pending ? "Saving…" : submitLabel}
         </button>
         <Link
           href="/admin"
-          className="rounded-md border border-stone-300 px-5 py-2.5 font-medium text-stone-700 hover:bg-stone-100"
+          className={buttonClass.outline}
         >
           Cancel
         </Link>

@@ -28,6 +28,18 @@ const productSchema = z.object({
   category: z.string().trim().min(1, "Category is required"),
   imageUrl: z.string().url("Image URL must be a valid URL"),
   stock: z.coerce.number().int().min(0, "Stock cannot be negative"),
+  size: z.string().trim().max(40).optional(),
+  // Comma-separated in the form, e.g. "Co-op sourced, Unrefined".
+  badges: z
+    .string()
+    .optional()
+    .transform((v) =>
+      (v ?? "")
+        .split(",")
+        .map((b) => b.trim())
+        .filter(Boolean)
+        .slice(0, 4),
+    ),
 });
 
 function slugify(input: string): string {
@@ -48,6 +60,8 @@ function parse(formData: FormData) {
     category: formData.get("category"),
     imageUrl: formData.get("imageUrl"),
     stock: formData.get("stock"),
+    size: (formData.get("size") as string) || undefined,
+    badges: (formData.get("badges") as string) || undefined,
   });
 }
 
@@ -79,6 +93,8 @@ export async function createProduct(
       category: data.category,
       imageUrl: data.imageUrl,
       stock: data.stock,
+      size: data.size || null,
+      badges: data.badges,
     },
   });
 
@@ -119,6 +135,8 @@ export async function updateProduct(
       category: data.category,
       imageUrl: data.imageUrl,
       stock: data.stock,
+      size: data.size || null,
+      badges: data.badges,
     },
   });
 

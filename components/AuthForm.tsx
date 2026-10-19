@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import type { FormState } from "@/lib/actions/auth";
+import { buttonClass, cardClass, inputClass } from "@/components/ui";
 
 type Action = (prev: FormState, formData: FormData) => Promise<FormState>;
 
@@ -23,98 +24,95 @@ export function AuthForm({
   const isRegister = mode === "register";
 
   return (
-    <div className="mx-auto max-w-sm">
-      <h1 className="mb-6 text-2xl font-bold">
-        {isRegister ? "Create your account" : "Welcome back"}
-      </h1>
-
-      {isRegister && refCode && (
-        <p className="mb-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          🎁 You were referred! You&apos;ll both get £5 credit after your first order.
+    <div className="mx-auto max-w-sm pt-2 md:pt-8">
+      <div className={`${cardClass} p-6`}>
+        <h1 className="font-display text-2xl font-bold">
+          {isRegister ? "Create your account" : "Welcome back 👋"}
+        </h1>
+        <p className="mt-1 text-sm text-ink-soft">
+          {isRegister
+            ? "Join AfroPantry for African essentials delivered across the UK."
+            : "Sign in to your AfroPantry account."}
         </p>
-      )}
 
-      <form action={formAction} className="space-y-4">
-        {isRegister && refCode && <input type="hidden" name="ref" value={refCode} />}
-        {isRegister && (
-          <div>
-            <label htmlFor="name" className="mb-1 block text-sm font-medium">
-              Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              autoComplete="name"
-              className="w-full rounded-md border border-stone-300 px-3 py-2 outline-none focus:border-emerald-500"
-            />
-          </div>
-        )}
-
-        <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-medium">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            className="w-full rounded-md border border-stone-300 px-3 py-2 outline-none focus:border-emerald-500"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="password" className="mb-1 block text-sm font-medium">
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            autoComplete={isRegister ? "new-password" : "current-password"}
-            className="w-full rounded-md border border-stone-300 px-3 py-2 outline-none focus:border-emerald-500"
-          />
-          {isRegister && (
-            <p className="mt-1 text-xs text-stone-500">At least 8 characters.</p>
-          )}
-        </div>
-
-        {state?.error && (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {state.error}
+        {isRegister && refCode && (
+          <p className="mt-4 rounded-xl bg-gold-light px-3 py-2 text-sm text-gold-dark">
+            🎁 You were referred! You&apos;ll both get £5 credit after your first order.
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-        >
-          {pending
-            ? "Please wait…"
-            : isRegister
-              ? "Create account"
-              : "Sign in"}
-        </button>
-      </form>
+        <form action={formAction} className="mt-5 space-y-4">
+          {isRegister && refCode && <input type="hidden" name="ref" value={refCode} />}
+          {isRegister && (
+            <div>
+              <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-ink-mid">
+                Name
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                required
+                autoComplete="name"
+                className={inputClass}
+              />
+            </div>
+          )}
 
-      <p className="mt-4 text-center text-sm text-stone-600">
+          <div>
+            <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-ink-mid">
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-ink-mid">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              minLength={8}
+              autoComplete={isRegister ? "new-password" : "current-password"}
+              className={inputClass}
+            />
+            {isRegister && <p className="mt-1 text-xs text-ink-soft">At least 8 characters.</p>}
+          </div>
+
+          {state?.error && (
+            <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-danger">
+              {state.error}
+            </p>
+          )}
+
+          <button type="submit" disabled={pending} className={`${buttonClass.primary} w-full`}>
+            {pending ? "Please wait…" : isRegister ? "Create account" : "Sign in"}
+          </button>
+        </form>
+      </div>
+
+      <p className="mt-4 text-center text-sm text-ink-mid">
         {isRegister ? (
           <>
             Already have an account?{" "}
-            <Link href="/login" className="text-emerald-700 hover:underline">
+            <Link href="/login" className="font-semibold text-brand hover:underline">
               Sign in
             </Link>
           </>
         ) : (
           <>
             New here?{" "}
-            <Link href="/register" className="text-emerald-700 hover:underline">
+            <Link href="/register" className="font-semibold text-brand hover:underline">
               Create an account
             </Link>
           </>

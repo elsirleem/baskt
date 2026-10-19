@@ -11,13 +11,16 @@ async function requireUserId(): Promise<string> {
   return userId;
 }
 
-export async function addToCart(productId: string) {
+const MAX_ADD_QUANTITY = 99;
+
+export async function addToCart(productId: string, quantity = 1) {
   const userId = await requireUserId();
+  const qty = Math.min(Math.max(Math.trunc(quantity) || 1, 1), MAX_ADD_QUANTITY);
 
   await prisma.cartItem.upsert({
     where: { userId_productId: { userId, productId } },
-    update: { quantity: { increment: 1 } },
-    create: { userId, productId, quantity: 1 },
+    update: { quantity: { increment: qty } },
+    create: { userId, productId, quantity: qty },
   });
 
   revalidatePath("/cart");
