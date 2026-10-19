@@ -1,13 +1,16 @@
 import { ProductForm } from "@/components/ProductForm";
 import { createProduct } from "@/lib/actions/admin";
+import { getCategories } from "@/lib/data";
 
 export const metadata = { title: "Admin — New product" };
 
-export default function NewProductPage() {
+export default async function NewProductPage() {
+  const categories = await getCategories();
+
   return (
     <div>
       <h2 className="mb-6 text-lg font-semibold">New product</h2>
-      <ProductForm action={createProduct} submitLabel="Create product" />
+      <ProductForm action={createProduct} categories={categories} submitLabel="Create product" />
     </div>
   );
 }

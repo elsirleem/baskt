@@ -1,3 +1,6 @@
+/** Admin category dropdown value meaning "type a new category". */
+export const NEW_CATEGORY_VALUE = "__new__";
+
 /** Icon shown on the home page's category tiles; unknown categories get a basket. */
 const CATEGORY_ICONS: Record<string, string> = {
   All: "🧺",

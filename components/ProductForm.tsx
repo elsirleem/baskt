@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
 import type { Product } from "@prisma/client";
 import type { ProductFormState } from "@/lib/actions/admin";
+import { NEW_CATEGORY_VALUE } from "@/lib/categories";
 import { buttonClass, inputClass } from "@/components/ui";
 
 type Action = (
@@ -21,6 +22,8 @@ function Field({
   min,
   placeholder,
   hint,
+  pattern,
+  title,
 }: {
   label: string;
   name: string;
@@ -31,6 +34,8 @@ function Field({
   min?: string;
   placeholder?: string;
   hint?: string;
+  pattern?: string;
+  title?: string;
 }) {
   return (
     <div>
@@ -46,6 +51,8 @@ function Field({
         step={step}
         min={min}
         placeholder={placeholder}
+        pattern={pattern}
+        title={title}
         className={inputClass}
       />
       {hint && <p className="mt-1 text-xs text-ink-soft">{hint}</p>}
@@ -56,19 +63,37 @@ function Field({
 export function ProductForm({
   action,
   product,
+  categories,
   submitLabel,
 }: {
   action: Action;
   product?: Product;
+  categories: string[];
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState<ProductFormState, FormData>(
     action,
     undefined,
   );
+  const [, startTransition] = useTransition();
+
+  const [category, setCategory] = useState(
+    product?.category ?? categories[0] ?? NEW_CATEGORY_VALUE,
+  );
+  const [newCategory, setNewCategory] = useState("");
 
   return (
-    <form action={formAction} className="max-w-xl space-y-4">
+    <form
+      action={formAction}
+      onSubmit={(e) => {
+        // Submit manually: React clears a form after an action runs, which would
+        // wipe everything the admin typed when the server rejects it.
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        startTransition(() => formAction(formData));
+      }}
+      className="max-w-xl space-y-4"
+    >
       <Field label="Name" name="name" defaultValue={product?.name} />
       <Field
         label="Slug"
@@ -100,7 +125,9 @@ export function ProductForm({
           type="number"
           step="0.01"
           min="0"
-          defaultValue={product ? (product.priceCents / 100).toFixed(2) : undefined}
+          defaultValue={
+            (product ? (product.priceCents / 100).toFixed(2) : undefined)
+          }
           placeholder="5.99"
         />
         <Field
@@ -131,7 +158,36 @@ export function ProductForm({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Category" name="category" defaultValue={product?.category} />
+        <div>
+          <label htmlFor="category" className="mb-1.5 block text-sm font-medium text-ink-mid">
+            Category
+          </label>
+          <select
+            id="category"
+            name="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className={inputClass}
+          >
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+            <option value={NEW_CATEGORY_VALUE}>+ New category…</option>
+          </select>
+          {category === NEW_CATEGORY_VALUE && (
+            <input
+              name="newCategory"
+              aria-label="New category name"
+              required
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              placeholder="e.g. Drinks"
+              className={`${inputClass} mt-2`}
+            />
+          )}
+        </div>
         <Field
           label="Stock"
           name="stock"
@@ -142,32 +198,42 @@ export function ProductForm({
       </div>
 
       <Field
-        label="Image URL"
+        label="Image link"
         name="imageUrl"
         type="url"
         defaultValue={product?.imageUrl}
         placeholder="https://images.unsplash.com/..."
-        hint="Must be an https://images.unsplash.com URL (see next.config.ts)."
+        pattern="https://images\.unsplash\.com/.+"
+        title="Use an image link from images.unsplash.com"
+        hint="Paste an image link from images.unsplash.com. Other sites aren't supported yet."
       />
 
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border-[1.5px] border-line bg-white px-4 py-3">
+        <input
+          type="checkbox"
+          name="isPrivateLabel"
+          defaultChecked={product?.isPrivateLabel ?? false}
+          className="mt-0.5 h-5 w-5 accent-brand"
+        />
+        <span>
+          <span className="block text-sm font-medium text-ink">Our Brand (private label)</span>
+          <span className="text-xs text-ink-soft">
+            Shows the gold &ldquo;Our Brand&rdquo; tag and adds it to the Our Label row.
+          </span>
+        </span>
+      </label>
+
       {state?.error && (
-        <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-danger">
+        <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-danger">
           {state.error}
         </p>
       )}
 
       <div className="flex items-center gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className={buttonClass.primary}
-        >
+        <button type="submit" disabled={pending} className={buttonClass.primary}>
           {pending ? "Saving…" : submitLabel}
         </button>
-        <Link
-          href="/admin"
-          className={buttonClass.outline}
-        >
+        <Link href="/admin" className={buttonClass.outline}>
           Cancel
         </Link>
       </div>
