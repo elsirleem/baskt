@@ -91,6 +91,8 @@ export default async function RecipePage(props: {
                     {ing.product ? (
                       <Link
                         href={`/product/${ing.product.slug}`}
+                        tabIndex={-1}
+                        aria-hidden="true"
                         className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-brand-pale"
                       >
                         <Image

@@ -24,7 +24,13 @@ export function ProductCard({
 
   return (
     <div className={`${cardClass} flex flex-col overflow-hidden ${className}`}>
-      <Link href={href} className="relative block aspect-[4/3] bg-brand-pale">
+      {/* Photo duplicates the name link below, so keep it out of tab order and screen readers. */}
+      <Link
+        href={href}
+        tabIndex={-1}
+        aria-hidden="true"
+        className="relative block aspect-[4/3] bg-brand-pale"
+      >
         <Image
           src={product.imageUrl}
           alt={product.name}

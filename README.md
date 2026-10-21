@@ -209,6 +209,25 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 
 Without the CLI, the success page still confirms orders by verifying the session directly.
 
+## Testing
+
+| Command | What it checks |
+| --- | --- |
+| `npm test` | Unit tests: pricing and delivery rules, Fresh Box dates, formatting, input checks. No database needed. |
+| `npm run test:db` | Database tests: marking orders paid (including the webhook and success page finishing at the same moment) and attempt limits. |
+| `npm run test:e2e` | Browser tests (Playwright): shopping, accounts, admin, security limits and headers. |
+
+- **Database tests** use a separate database: your `DATABASE_URL` with `_test` added to its
+  name (or `TEST_DATABASE_URL`). It's created and migrated automatically, emptied between
+  tests, and the tests refuse to run against any database whose name doesn't end in `_test`.
+- **Browser tests** use your running `npm run dev` (or start it) and your installed Google
+  Chrome. They create `e2e+…@example.com` accounts and products named `E2E …`, and delete
+  them when the run finishes. Run `npx playwright test --ui` to watch them.
+- **On every push** GitHub Actions (`.github/workflows/ci.yml`) runs typecheck, lint, unit
+  tests and a build, plus the database and browser tests against a throwaway Postgres and
+  the production build. If browser tests fail, the run page has a downloadable
+  Playwright report showing what happened.
+
 ## Scripts
 
 | Command | Description |
@@ -217,6 +236,8 @@ Without the CLI, the success page still confirms orders by verifying the session
 | `npm run db:migrate` | Create + apply a migration after editing the schema (development) |
 | `npm run db:deploy` | Apply pending migrations (production, staging, fresh setups) |
 | `npm run db:seed` / `db:studio` | Load sample data / Prisma Studio |
+| `npm run typecheck` / `lint` | TypeScript check / ESLint |
+| `npm test` / `test:db` / `test:e2e` | Unit / database / browser tests (see Testing) |
 | `npm run setup-stripe` | Create membership and Fresh Box prices in Stripe |
 | `npm run make-admin -- <email>` | Promote a user to admin |
 

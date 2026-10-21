@@ -122,6 +122,8 @@ export default async function CartPage() {
               <li key={item.id} className={`${cardClass} flex items-center gap-3 p-3.5`}>
                 <Link
                   href={`/product/${item.product.slug}`}
+                  tabIndex={-1}
+                  aria-hidden="true"
                   className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-brand-pale"
                 >
                   <Image
