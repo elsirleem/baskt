@@ -106,19 +106,28 @@ export async function POST() {
     // Member discount + account credit are represented as a single one-time coupon,
     // so Stripe's hosted page shows the full prices with the savings applied.
     const savingsCents = totals.discountCents + totals.creditAppliedCents;
+    // Usable once, and only until this checkout expires; deleted early if it does.
+    const expiresAt = Math.floor(Date.now() / 1000) + 30 * 60;
     let discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined;
+    let couponId: string | undefined;
     if (savingsCents > 0) {
       const coupon = await stripe.coupons.create({
         amount_off: savingsCents,
         currency,
         duration: "once",
         name: "AfroPantry savings",
+        max_redemptions: 1,
+        redeem_by: expiresAt + 60,
       });
+      couponId = coupon.id;
       discounts = [{ coupon: coupon.id }];
     }
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      // We sell and deliver in the UK only: always charge in pounds, with no
+      // currency-conversion fee or foreign payment methods.
+      adaptive_pricing: { enabled: false },
       customer: customerId,
       line_items,
       discounts,
@@ -129,7 +138,7 @@ export async function POST() {
       customer_update: { shipping: "auto" },
       // Stripe's minimum; a short window means fewer abandoned sessions holding
       // a basket whose stock may sell out in the meantime.
-      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+      expires_at: expiresAt,
       success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/cart`,
       client_reference_id: order.id,
@@ -137,6 +146,7 @@ export async function POST() {
         orderId: order.id,
         userId,
         creditAppliedCents: String(totals.creditAppliedCents),
+        ...(couponId && { couponId }),
       },
     });
 

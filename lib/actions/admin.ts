@@ -171,11 +171,29 @@ export async function updateProduct(
   redirect("/admin");
 }
 
-export async function deleteProduct(id: string) {
+/** Deletes a product that has never been ordered; ordered ones must be archived. */
+export async function deleteProduct(id: string): Promise<{ error?: string }> {
   await requireAdmin();
+  if ((await prisma.orderItem.count({ where: { productId: id } })) > 0) {
+    return { error: "This product is in past orders, so it can't be deleted. Archive it instead." };
+  }
   await prisma.product.delete({ where: { id } });
   revalidatePath("/admin");
   revalidatePath("/");
+  return {};
+}
+
+/** Archive hides a product from the shop (past orders keep it); restore brings it back. */
+export async function setProductArchived(id: string, archived: boolean) {
+  await requireAdmin();
+  const product = await prisma.product.update({
+    where: { id },
+    data: { archivedAt: archived ? new Date() : null },
+    select: { slug: true },
+  });
+  revalidatePath("/admin");
+  revalidatePath("/");
+  revalidatePath(`/product/${product.slug}`);
 }
 
 export type FulfilmentFormState = { error?: string } | undefined;

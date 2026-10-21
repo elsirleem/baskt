@@ -10,6 +10,7 @@ export const metadata = { title: "Your orders" };
 const STATUS: Record<string, { label: string; className: string }> = {
   PAID: { label: "Paid", className: "bg-brand-pale text-brand" },
   PENDING: { label: "Awaiting payment", className: "bg-gold-light text-gold-dark" },
+  AWAITING_PAYMENT: { label: "Payment processing", className: "bg-gold-light text-gold-dark" },
   CANCELLED: { label: "Cancelled", className: "bg-line text-ink-soft" },
 };
 
@@ -117,9 +118,7 @@ export default async function OrdersPage() {
 
               {(order.discountCents > 0 || order.creditAppliedCents > 0) && (
                 <p className="mt-2 text-xs font-semibold text-brand">
-                  You saved{" "}
-                  {formatPrice(order.discountCents + order.creditAppliedCents, order.currency)} on
-                  this order
+                  {`You saved ${formatPrice(order.discountCents + order.creditAppliedCents, order.currency)} on this order`}
                 </p>
               )}
 

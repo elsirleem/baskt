@@ -46,6 +46,9 @@ export async function POST(request: Request) {
     const customerId = await ensureStripeCustomer(userId);
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      // We sell and deliver in the UK only: always charge in pounds, with no
+      // currency-conversion fee or foreign payment methods.
+      adaptive_pricing: { enabled: false },
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: { metadata: { kind: "membership", tier } },

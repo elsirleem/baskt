@@ -2,11 +2,13 @@ import type { Prisma, SubTier } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { cancelAbandonedOrders } from "@/lib/orders";
 
 export async function getProducts(
   opts: { category?: string; query?: string; privateLabel?: boolean } = {},
 ) {
-  const where: Prisma.ProductWhereInput = {};
+  // Archived products stay in past orders but leave the shop.
+  const where: Prisma.ProductWhereInput = { archivedAt: null };
 
   if (opts.category && opts.category !== "All") {
     where.category = opts.category;
@@ -33,6 +35,7 @@ export async function getProducts(
 
 export async function getCategories() {
   const rows = await prisma.product.findMany({
+    where: { archivedAt: null },
     distinct: ["category"],
     select: { category: true },
     orderBy: { category: "asc" },
@@ -93,12 +96,13 @@ const ADMIN_ORDER_FILTERS: Record<AdminOrderView, Prisma.OrderWhereInput> = {
   "to-fulfil": { status: "PAID", fulfilment: { in: ["UNFULFILLED", "PACKED"] } },
   shipped: { status: "PAID", fulfilment: "SHIPPED" },
   delivered: { status: "PAID", fulfilment: "DELIVERED" },
-  unpaid: { status: { in: ["PENDING", "CANCELLED"] } },
+  unpaid: { status: { in: ["PENDING", "AWAITING_PAYMENT", "CANCELLED"] } },
 };
 
 /** Orders for one admin tab: oldest first when packing, newest first otherwise. */
 export async function getAdminOrders(view: AdminOrderView) {
   await requireAdmin();
+  await cancelAbandonedOrders();
   return prisma.order.findMany({
     where: ADMIN_ORDER_FILTERS[view],
     include: {
@@ -201,6 +205,7 @@ export async function getRecipeBySlug(slug: string) {
 }
 
 export async function getOrders(userId: string) {
+  await cancelAbandonedOrders(userId);
   return prisma.order.findMany({
     where: { userId },
     include: { items: true },

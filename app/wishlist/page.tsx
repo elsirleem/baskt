@@ -64,7 +64,11 @@ export default async function WishlistPage() {
                   .join(" · ")}
               </p>
               <div className="mt-1.5 flex items-center gap-3">
-                <MoveToCartButton productId={item.productId} />
+                {item.product.archivedAt ? (
+                  <span className="text-xs font-semibold text-ink-soft">No longer available</span>
+                ) : (
+                  <MoveToCartButton productId={item.productId} />
+                )}
                 <RemoveFromWishlistButton productId={item.productId} />
               </div>
             </div>

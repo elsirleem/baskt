@@ -12,6 +12,12 @@ const VIEWS: { key: AdminOrderView; label: string; empty: string }[] = [
   { key: "unpaid", label: "Unpaid", empty: "No unpaid or cancelled orders." },
 ];
 
+const UNPAID_LABEL: Record<string, string> = {
+  PENDING: "Awaiting payment",
+  AWAITING_PAYMENT: "Payment processing",
+  CANCELLED: "Cancelled",
+};
+
 const placed = new Intl.DateTimeFormat("en-GB", {
   dateStyle: "medium",
   timeStyle: "short",
@@ -89,9 +95,7 @@ export default async function AdminOrdersPage(props: {
                     <span className="rounded-full bg-brand-pale px-2.5 py-0.5 text-xs font-semibold text-brand">
                       {order.status === "PAID"
                         ? FULFILMENT_STEPS[stepIndex(order.fulfilment)].adminLabel
-                        : order.status === "PENDING"
-                          ? "Awaiting payment"
-                          : "Cancelled"}
+                        : UNPAID_LABEL[order.status]}
                     </span>
                   </td>
                 </tr>

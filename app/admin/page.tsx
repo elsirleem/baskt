@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { requireAdmin } from "@/lib/data";
-import { DeleteProductButton } from "@/components/DeleteProductButton";
+import { ArchiveProductButton, DeleteProductButton } from "@/components/DeleteProductButton";
 import { buttonClass } from "@/components/ui";
 
 export const metadata = { title: "Admin — Products" };
@@ -18,12 +18,22 @@ function StockCell({ stock }: { stock: number }) {
 
 export default async function AdminProductsPage() {
   await requireAdmin();
-  const products = await prisma.product.findMany({ orderBy: { createdAt: "asc" } });
+  // Archived products go to the bottom; order counts decide if Delete is allowed.
+  const products = await prisma.product.findMany({
+    orderBy: [{ archivedAt: { sort: "asc", nulls: "first" } }, { createdAt: "asc" }],
+    include: { _count: { select: { orderItems: true } } },
+  });
+  const archivedCount = products.filter((p) => p.archivedAt).length;
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-bold">Products ({products.length})</h2>
+        <h2 className="font-display text-lg font-bold">
+          Products ({products.length - archivedCount})
+          {archivedCount > 0 && (
+            <span className="ml-2 text-sm font-normal text-ink-soft">+ {archivedCount} archived</span>
+          )}
+        </h2>
         <Link href="/admin/products/new" className={`${buttonClass.primary} px-4 py-2.5 text-sm`}>
           + New product
         </Link>
@@ -42,7 +52,7 @@ export default async function AdminProductsPage() {
           </thead>
           <tbody className="divide-y divide-line">
             {products.map((product) => (
-              <tr key={product.id}>
+              <tr key={product.id} className={product.archivedAt ? "bg-cream/60 text-ink-soft" : ""}>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-brand-pale">
@@ -55,7 +65,14 @@ export default async function AdminProductsPage() {
                       />
                     </div>
                     <div>
-                      <p className="font-medium text-ink">{product.name}</p>
+                      <p className="font-medium text-ink">
+                        {product.name}
+                        {product.archivedAt && (
+                          <span className="ml-2 rounded-full bg-line px-2 py-0.5 text-[10px] font-bold uppercase text-ink-mid">
+                            Archived
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-ink-soft">
                         {[product.size, product.isPrivateLabel ? "Our Brand" : null]
                           .filter(Boolean)
@@ -77,7 +94,10 @@ export default async function AdminProductsPage() {
                     >
                       Edit
                     </Link>
-                    <DeleteProductButton id={product.id} name={product.name} />
+                    <ArchiveProductButton id={product.id} archived={Boolean(product.archivedAt)} />
+                    {product._count.orderItems === 0 && (
+                      <DeleteProductButton id={product.id} name={product.name} />
+                    )}
                   </div>
                 </td>
               </tr>

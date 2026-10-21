@@ -27,9 +27,11 @@ async function addWithinStock(
 ): Promise<CartResult> {
   const product = await prisma.product.findUnique({
     where: { id: productId },
-    select: { name: true, stock: true },
+    select: { name: true, stock: true, archivedAt: true },
   });
-  if (!product) return { ok: false, error: "That product is no longer available." };
+  if (!product || product.archivedAt) {
+    return { ok: false, error: `${product?.name ?? "That product"} is no longer available.` };
+  }
   if (product.stock <= 0) return { ok: false, error: `${product.name} is sold out.` };
 
   const existing = await prisma.cartItem.findUnique({

@@ -33,8 +33,9 @@ export default async function ProductPage(props: {
     getRecipesUsingProduct(product.id),
   ]);
   const wishlistIds = userId ? await getWishlistProductIds(userId) : new Set<string>();
-  const outOfStock = product.stock <= 0;
-  const lowStock = !outOfStock && product.stock <= 10;
+  const archived = Boolean(product.archivedAt);
+  const outOfStock = !archived && product.stock <= 0;
+  const lowStock = !archived && !outOfStock && product.stock <= 10;
 
   return (
     <div className="-mx-4 -mt-2 md:mx-0 md:mt-0 md:grid md:grid-cols-2 md:items-start md:gap-10">
@@ -117,12 +118,18 @@ export default async function ProductPage(props: {
         )}
 
         <div className="mt-6">
-          <AddWithQuantity
-            productId={product.id}
-            priceCents={product.priceCents}
-            currency={product.currency}
-            stock={product.stock}
-          />
+          {archived ? (
+            <p className="rounded-xl bg-cream px-4 py-3 text-sm font-medium text-ink-mid">
+              We no longer sell this product.
+            </p>
+          ) : (
+            <AddWithQuantity
+              productId={product.id}
+              priceCents={product.priceCents}
+              currency={product.currency}
+              stock={product.stock}
+            />
+          )}
         </div>
       </div>
     </div>

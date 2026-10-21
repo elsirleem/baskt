@@ -49,8 +49,7 @@ export default async function CheckoutSuccessPage(props: {
       </h1>
       {confirmed ? (
         <p className="mx-auto mt-2 max-w-md text-ink-mid">
-          Your payment of {formatPrice(totalCents, currency)} was successful. We&apos;ll get
-          your basket packed and on its way.
+          {`Your payment of ${formatPrice(totalCents, currency)} was successful. We'll get your basket packed and on its way.`}
         </p>
       ) : (
         <p className="mx-auto mt-2 max-w-md text-ink-mid">

@@ -9,6 +9,12 @@ import { BackLink, cardClass } from "@/components/ui";
 
 export const metadata = { title: "Admin — Order" };
 
+const UNPAID_LABEL: Record<string, string> = {
+  PENDING: "Awaiting payment",
+  AWAITING_PAYMENT: "Payment processing",
+  CANCELLED: "Cancelled",
+};
+
 const placed = new Intl.DateTimeFormat("en-GB", {
   dateStyle: "medium",
   timeStyle: "short",
@@ -46,8 +52,7 @@ export default async function AdminOrderPage(props: { params: Promise<{ id: stri
         <h2 className="font-display text-xl font-bold">Order #{order.id.slice(-8).toUpperCase()}</h2>
         <p className="text-sm text-ink-soft">
           Placed {placed.format(order.createdAt)}
-          {order.status !== "PAID" &&
-            ` · ${order.status === "PENDING" ? "Awaiting payment" : "Cancelled"}`}
+          {order.status !== "PAID" && ` · ${UNPAID_LABEL[order.status]}`}
         </p>
       </div>
 
