@@ -51,6 +51,23 @@ test("settings: change name and password, then sign in with the new password", a
   await expect(page).toHaveURL("/");
 });
 
+test("email capitals don't matter: one account, sign in either way", async ({ page }) => {
+  const email = testEmail("case");
+  await register(page, email.toUpperCase());
+  await expect(page).toHaveURL("/");
+  await page.goto("/account");
+  await expect(page.getByText(email, { exact: true })).toBeVisible(); // stored lowercase
+
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
+  await signIn(page, email);
+  await expect(page).toHaveURL("/");
+
+  await page.context().clearCookies();
+  await register(page, email);
+  await expect(formAlert(page)).toHaveText("An account with that email already exists.");
+});
+
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 

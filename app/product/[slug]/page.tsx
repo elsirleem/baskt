@@ -121,7 +121,7 @@ export default async function ProductPage(props: {
             productId={product.id}
             priceCents={product.priceCents}
             currency={product.currency}
-            disabled={outOfStock}
+            stock={product.stock}
           />
         </div>
       </div>

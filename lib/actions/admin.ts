@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { isCurrentUserAdmin } from "@/lib/data";
 import { isAllowedImageUrl, ALLOWED_IMAGE_HOSTS } from "@/lib/images";
 import { NEW_CATEGORY_VALUE } from "@/lib/categories";
+import { CARRIERS, FULFILMENT_STEPS, canMoveTo, stepIndex } from "@/lib/fulfilment";
 
 async function requireAdmin() {
   if (!(await isCurrentUserAdmin())) {
@@ -175,4 +176,71 @@ export async function deleteProduct(id: string) {
   await prisma.product.delete({ where: { id } });
   revalidatePath("/admin");
   revalidatePath("/");
+}
+
+export type FulfilmentFormState = { error?: string } | undefined;
+
+const fulfilmentSchema = z
+  .object({
+    orderId: z.string().min(1),
+    next: z.enum(["PACKED", "SHIPPED", "DELIVERED"]),
+    carrier: z.enum(CARRIERS).optional(),
+    trackingNumber: z.string().trim().max(60).optional(),
+  })
+  .refine((v) => v.next !== "SHIPPED" || v.carrier, {
+    message: "Choose who is delivering it.",
+  });
+
+/**
+ * Moves a paid order forward (packed → shipped → delivered). Skipped steps get
+ * the same timestamp, and two admins clicking at once can't both apply a step.
+ */
+export async function updateFulfilment(
+  _prev: FulfilmentFormState,
+  formData: FormData,
+): Promise<FulfilmentFormState> {
+  await requireAdmin();
+
+  const parsed = fulfilmentSchema.safeParse({
+    orderId: formData.get("orderId"),
+    next: formData.get("next"),
+    carrier: formData.get("carrier") || undefined,
+    trackingNumber: formData.get("trackingNumber") || undefined,
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const { orderId, next, carrier, trackingNumber } = parsed.data;
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { status: true, fulfilment: true, packedAt: true, shippedAt: true },
+  });
+  if (!order || order.status !== "PAID") {
+    return { error: "Only paid orders can be packed or shipped." };
+  }
+  if (!canMoveTo(order.fulfilment, next)) {
+    return { error: `This order is already marked ${FULFILMENT_STEPS[stepIndex(order.fulfilment)].adminLabel.toLowerCase()}.` };
+  }
+
+  const now = new Date();
+  const reaches = (status: "PACKED" | "SHIPPED") => stepIndex(next) >= stepIndex(status);
+  const updated = await prisma.order.updateMany({
+    where: { id: orderId, fulfilment: order.fulfilment },
+    data: {
+      fulfilment: next,
+      ...(reaches("PACKED") && !order.packedAt && { packedAt: now }),
+      ...(reaches("SHIPPED") && !order.shippedAt && { shippedAt: now }),
+      ...(next === "SHIPPED" && { carrier, trackingNumber: trackingNumber || null }),
+      ...(next === "DELIVERED" && { deliveredAt: now }),
+    },
+  });
+  if (updated.count === 0) {
+    return { error: "Someone else just updated this order. Reload to see the latest." };
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/orders");
+  return undefined;
 }

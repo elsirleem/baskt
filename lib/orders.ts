@@ -33,10 +33,10 @@ export function shippingFromSession(
 }
 
 /**
- * Finalize a paid order exactly once: mark PAID, save the delivery address, clear
- * the basket, deduct any account credit used, and grant referral rewards on the
- * buyer's first paid order. Idempotent — safe to call from both the webhook and
- * the success page, even at the same moment.
+ * Finalize a paid order exactly once: mark PAID, save the delivery address, take
+ * the items out of stock, clear the basket, deduct any account credit used, and
+ * grant referral rewards on the buyer's first paid order. Idempotent — safe to
+ * call from both the webhook and the success page, even at the same moment.
  */
 export async function finalizeOrderPaid(
   orderId: string,
@@ -47,11 +47,24 @@ export async function finalizeOrderPaid(
     // racing webhook and success page can't both apply credit and rewards.
     const claimed = await tx.order.updateMany({
       where: { id: orderId, status: "PENDING" },
-      data: { status: "PAID", ...shipping },
+      data: { status: "PAID", paidAt: new Date(), ...shipping },
     });
     if (claimed.count === 0) return;
 
-    const order = await tx.order.findUniqueOrThrow({ where: { id: orderId } });
+    const order = await tx.order.findUniqueOrThrow({
+      where: { id: orderId },
+      include: { items: true },
+    });
+
+    // Atomic decrements, so simultaneous orders can't lose a sale. Stock can go
+    // below zero if two people pay for the last one; the admin sees "oversold".
+    for (const item of order.items) {
+      await tx.product.update({
+        where: { id: item.productId },
+        data: { stock: { decrement: item.quantity } },
+      });
+    }
+
     await tx.cartItem.deleteMany({ where: { userId: order.userId } });
 
     if (order.creditAppliedCents > 0) {

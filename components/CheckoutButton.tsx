@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { buttonClass } from "@/components/ui";
 
-export function CheckoutButton({ label = "Checkout securely" }: { label?: string }) {
+export function CheckoutButton({
+  label = "Checkout securely",
+  blockedReason,
+}: {
+  label?: string;
+  /** When set, checkout is disabled and this is shown instead of the label. */
+  blockedReason?: string;
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,10 +36,10 @@ export function CheckoutButton({ label = "Checkout securely" }: { label?: string
       <button
         type="button"
         onClick={handleCheckout}
-        disabled={loading}
+        disabled={loading || !!blockedReason}
         className={`${buttonClass.primary} w-full py-4 text-base`}
       >
-        {loading ? "Redirecting to secure checkout…" : label}
+        {blockedReason ?? (loading ? "Redirecting to secure checkout…" : label)}
       </button>
       {error && <p className="mt-2 text-sm text-danger">{error}</p>}
     </div>

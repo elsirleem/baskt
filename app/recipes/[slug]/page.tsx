@@ -30,8 +30,8 @@ export default async function RecipePage(props: {
   const locked = recipe.isPremium && tier !== "PLUS";
 
   const shoppableIds = recipe.ingredients
-    .map((i) => i.product?.id)
-    .filter((id): id is string => Boolean(id));
+    .filter((i) => i.product && i.product.stock > 0)
+    .map((i) => i.product!.id);
 
   return (
     <div className="-mx-4 -mt-2 md:mx-0 md:mt-0">

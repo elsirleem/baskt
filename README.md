@@ -30,8 +30,10 @@ get a top menu.
 | **Referral engine**: per-user code, £5 credit each way on first order | `lib/referral.ts`, `lib/orders.ts`, `app/account` |
 | Free delivery over £70 (always for Plus) | `lib/pricing.ts` |
 | Secure checkout with UK delivery address + phone, order records (discount/delivery/credit/address snapshot) | `app/api/checkout`, `app/api/webhooks/stripe` |
-| Order history | `app/orders/page.tsx` |
-| Admin product management (CRUD) | `app/admin`, `lib/actions/admin.ts` |
+| Order history with delivery tracking (received → packed → on its way → delivered) | `app/orders/page.tsx`, `components/OrderTracker.tsx` |
+| **Stock control**: baskets capped at stock, checkout re-checks, paid orders reduce stock | `lib/stock.ts`, `lib/actions/cart.ts`, `lib/orders.ts` |
+| Admin product management (CRUD, stock warnings) | `app/admin`, `lib/actions/admin.ts` |
+| **Admin orders**: to fulfil / on the way / delivered / unpaid, address and phone, mark packed → shipped (carrier + tracking) → delivered | `app/admin/orders`, `lib/fulfilment.ts` |
 | Profile (plan, stats, Fresh Box, referrals, credit) | `app/account/page.tsx` |
 
 ## Run the whole thing with Docker (easiest)
@@ -113,8 +115,8 @@ migration in `prisma/migrations/` (commit these folders).
 
 1. Edit `prisma/schema.prisma`.
 2. `npm run db:migrate -- --name what_changed` creates the migration, applies it to
-   your local database, and regenerates the Prisma client. Read the generated SQL
-   before committing it.
+   your local database, then regenerates the Prisma client (Prisma 7's `migrate dev`
+   no longer does that itself). Read the generated SQL before committing it.
 3. On deploy, the container applies pending migrations (`npm run db:deploy`).
 
 In production, only ever run `db:deploy`. Never run `prisma db push`,
@@ -167,6 +169,10 @@ npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prism
 - **Orders** snapshot subtotal, discount, delivery, credit, and per-item prices at purchase.
 - **Delivery address**: Stripe Checkout collects a UK address and phone number; they're saved
   on the order when it's paid and shown in order history (and in the Stripe Dashboard).
+- **Stock:** the basket never holds more than is in stock, checkout re-checks stock on the
+  server, and the Stripe payment page expires after 30 minutes (Stripe's minimum).
+  Paying takes the items out of stock. If two people pay for the last one at once,
+  stock goes below zero and the admin products list shows "Oversold by N".
 - **Order finalization** (`lib/orders.ts`) is idempotent and shared by the webhook and the
   success page: it atomically flips the order PENDING → PAID, so even if both run at once,
   the basket is cleared, credit deducted, and referral rewards paid exactly once.
@@ -196,7 +202,18 @@ npm run make-admin -- you@example.com    # (also accepts multiple emails)
 ```
 
 An **Admin** link appears in the header (desktop) and in the Profile menu; non-admins are
-redirected from `/admin`.
+redirected from `/admin`. Admin has two tabs:
+
+- **Products:** add, edit and delete products; stock shows "N left", "Sold out" or
+  "Oversold by N".
+- **Orders:** paid orders waiting to be packed (oldest first), on the way, delivered, and
+  unpaid. Each order shows the items, totals, delivery address and phone, and buttons to
+  mark it packed, shipped (choose the carrier, add a tracking number) and delivered.
+  Customers see each step in their order history and a "Track your order" row in their
+  Profile. Refunds are made in the Stripe Dashboard.
+
+Every admin page and admin query checks for an admin itself; the layout check alone isn't
+enough because layouts don't re-run on client-side navigation.
 
 ## Testing payments
 
@@ -247,8 +264,9 @@ Without the CLI, the success page still confirms orders by verifying the session
   The original plan envisions a React Native app; the backend here (data model, Stripe,
   auth) is API-shaped and reusable if a native client is built later.
 - **Not built yet** (shown in the design prototype, left out until they exist): notification
-  bell, order tracking (simple status updates or live DHL/DPD), saved delivery addresses in
-  the profile, restock reminders, and changing the Fresh Box delivery day after signup.
+  bell, links to carriers' live tracking pages, emails when an order ships, saved delivery
+  addresses in the profile, restock reminders, and changing the Fresh Box delivery day
+  after signup.
 - **Deferred from the plan:** fresh-box fulfilment scheduling, AI restock recommendations,
   and WhatsApp social commerce.
 - **Prisma 7** keeps the connection in `prisma.config.ts` (not the schema) and uses a pg

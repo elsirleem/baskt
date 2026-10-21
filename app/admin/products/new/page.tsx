@@ -1,10 +1,11 @@
 import { ProductForm } from "@/components/ProductForm";
 import { createProduct } from "@/lib/actions/admin";
-import { getCategories } from "@/lib/data";
+import { getCategories, requireAdmin } from "@/lib/data";
 
 export const metadata = { title: "Admin — New product" };
 
 export default async function NewProductPage() {
+  await requireAdmin();
   const categories = await getCategories();
 
   return (

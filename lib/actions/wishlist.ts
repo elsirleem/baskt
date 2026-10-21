@@ -33,19 +33,3 @@ export async function removeFromWishlist(productId: string) {
   await prisma.wishlistItem.deleteMany({ where: { userId, productId } });
   revalidatePath("/wishlist");
 }
-
-export async function moveToCart(productId: string) {
-  const userId = await requireUserId();
-
-  await prisma.$transaction([
-    prisma.cartItem.upsert({
-      where: { userId_productId: { userId, productId } },
-      update: { quantity: { increment: 1 } },
-      create: { userId, productId, quantity: 1 },
-    }),
-    prisma.wishlistItem.deleteMany({ where: { userId, productId } }),
-  ]);
-
-  revalidatePath("/wishlist");
-  revalidatePath("/cart");
-}

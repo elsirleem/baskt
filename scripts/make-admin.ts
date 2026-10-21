@@ -7,7 +7,8 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  const emails = process.argv.slice(2);
+  // Emails are stored lowercase.
+  const emails = process.argv.slice(2).map((e) => e.trim().toLowerCase());
   if (emails.length === 0) {
     console.error("Usage: npm run make-admin -- <email> [email...]");
     process.exit(1);

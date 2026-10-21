@@ -6,9 +6,12 @@ import { updateCartQuantity, removeFromCart } from "@/lib/actions/cart";
 export function QuantityControl({
   productId,
   quantity,
+  max,
 }: {
   productId: string;
   quantity: number;
+  /** Units in stock; "+" stops here. */
+  max: number;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -29,7 +32,7 @@ export function QuantityControl({
       <span className="min-w-4 text-center text-sm font-bold text-ink">{quantity}</span>
       <button
         type="button"
-        disabled={pending}
+        disabled={pending || quantity >= max}
         onClick={() => set(quantity + 1)}
         className="w-5 text-base font-bold leading-none text-brand disabled:opacity-50"
         aria-label="Increase quantity"
