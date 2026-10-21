@@ -42,6 +42,8 @@ model User {
   orders        Order[]
   subscription  Subscription?
   freshBox      FreshBoxSubscription?
+
+  @@index([referredById]) // referral counts on the profile
 }
 
 model FreshBoxSubscription {
@@ -91,6 +93,8 @@ model Product {
   wishlistItems     WishlistItem[]
   orderItems        OrderItem[]
   recipeIngredients RecipeIngredient[]
+
+  @@index([category]) // category filter on the home page
 }
 
 model CartItem {
@@ -145,6 +149,8 @@ model Order {
   createdAt          DateTime    @default(now())
   user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items              OrderItem[]
+
+  @@index([userId, createdAt]) // order history, newest first
 }
 
 model OrderItem {
@@ -157,6 +163,8 @@ model OrderItem {
   nameSnapshot   String
   order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product        Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
 }
 
 model Recipe {
@@ -183,4 +191,7 @@ model RecipeIngredient {
   sortOrder Int      @default(0)
   recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([recipeId])
+  @@index([productId]) // "Use in these recipes" on product pages
 }

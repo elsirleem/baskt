@@ -43,8 +43,10 @@ catalogue, and serves the app at http://localhost:3000:
 docker compose up --build
 ```
 
-- `app` waits for the `db` healthcheck, then runs `prisma db push` + seed on first
-  boot (idempotent), then starts Next.
+- `app` waits for the `db` healthcheck, applies any pending migrations
+  (`prisma migrate deploy`), loads the sample catalogue if the shop is empty
+  (`SEED_SAMPLE_DATA=true` in `docker-compose.yml`), then starts Next. If migrations
+  can't be applied, the app doesn't start.
 - Secrets come from `.env` (`AUTH_SECRET`, `STRIPE_*`); compose overrides
   `DATABASE_URL` so the app reaches the `db` service.
 - Stop with `docker compose down` (add `-v` to also wipe the database volume).
@@ -85,9 +87,12 @@ Also generate a real auth secret with `npx auth secret` → `AUTH_SECRET`.
 ### 3. Set up the database
 
 ```bash
-npm run db:push    # create tables
+npm run db:deploy  # create the tables by applying the migrations in prisma/migrations
 npm run db:seed    # 28 African SKUs + 4 Nigerian recipes
 ```
+
+`db:seed` adds the sample products and resets them to their defaults; products
+added through the admin are left alone.
 
 ### 4. (For memberships) provision Stripe prices
 
@@ -99,6 +104,32 @@ npm run setup-stripe   # creates the AfroBasic/AfroPlus + Fresh Box prices, prin
 
 ```bash
 npm run dev        # http://localhost:3000
+```
+
+## Changing the database
+
+The schema lives in `prisma/schema.prisma`, and every change ships as a versioned
+migration in `prisma/migrations/` (commit these folders).
+
+1. Edit `prisma/schema.prisma`.
+2. `npm run db:migrate -- --name what_changed` creates the migration, applies it to
+   your local database, and regenerates the Prisma client. Read the generated SQL
+   before committing it.
+3. On deploy, the container applies pending migrations (`npm run db:deploy`).
+
+In production, only ever run `db:deploy`. Never run `prisma db push`,
+`prisma migrate dev`, or `prisma migrate reset` against it (they can drop data), and
+use a managed Postgres with automatic backups and point-in-time recovery; take a
+backup before deploying a migration that changes or removes columns.
+
+**Databases created before migrations** (with the old `db:push` and the AfroPantry
+schema) need a one-time baseline so Prisma knows the tables already exist:
+
+```bash
+npx prisma migrate resolve --applied 0_init   # record the existing tables as migration 0_init
+npm run db:deploy                              # apply the migrations that came after it
+npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma
+# should print "No difference detected"; anything else means the database had drifted
 ```
 
 ## How the money works
@@ -158,7 +189,9 @@ Without the CLI, the success page still confirms orders by verifying the session
 | Command | Description |
 | --- | --- |
 | `npm run dev` / `build` / `start` | Dev / production build / serve |
-| `npm run db:push` / `db:seed` / `db:studio` | Schema sync / seed / Prisma Studio |
+| `npm run db:migrate` | Create + apply a migration after editing the schema (development) |
+| `npm run db:deploy` | Apply pending migrations (production, staging, fresh setups) |
+| `npm run db:seed` / `db:studio` | Load sample data / Prisma Studio |
 | `npm run setup-stripe` | Create membership and Fresh Box prices in Stripe |
 | `npm run make-admin -- <email>` | Promote a user to admin |
 

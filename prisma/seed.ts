@@ -194,11 +194,19 @@ const recipes: {
 ];
 
 async function main() {
-  console.log("Seeding AfroPantry catalogue...");
+  // Container start passes --if-empty: only fill a brand-new database, never
+  // overwrite a shop that already has products.
+  if (process.argv.includes("--if-empty")) {
+    const count = await prisma.product.count();
+    if (count > 0) {
+      console.log(`Catalogue already has ${count} products — skipping sample data.`);
+      return;
+    }
+  }
 
-  // Remove products no longer in the catalogue (old Western seed), keeping referenced ones.
-  const slugs = products.map((p) => p.slug);
-  await prisma.product.deleteMany({ where: { slug: { notIn: slugs } } });
+  // Adds the sample products and resets them to these defaults; products added
+  // through the admin are left alone.
+  console.log("Seeding AfroPantry catalogue...");
 
   for (const p of products) {
     await prisma.product.upsert({
