@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/data";
+import { LIMITS, rateLimit } from "@/lib/rate-limit";
 
 export type SettingsState = { error?: string; success?: string } | undefined;
 
@@ -47,6 +48,12 @@ export async function changePassword(
 ): Promise<SettingsState> {
   const userId = await requireUserId();
 
+  // Stops someone with a borrowed session from guessing the current password.
+  const limited = await rateLimit(`password:user:${userId}`, LIMITS.passwordChangePerUser);
+  if (!limited.ok) {
+    return { error: "Too many attempts. Please wait 15 minutes and try again." };
+  }
+
   const parsed = passwordSchema.safeParse({
     current: formData.get("current"),
     next: formData.get("next"),
@@ -64,7 +71,7 @@ export async function changePassword(
     return { error: "Your current password is incorrect." };
   }
 
-  const passwordHash = await bcrypt.hash(parsed.data.next, 10);
+  const passwordHash = await bcrypt.hash(parsed.data.next, 12);
   await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
   return { success: "Password changed." };
 }

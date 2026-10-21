@@ -6,11 +6,20 @@ import { getCurrentUserId, getCart, getAccount } from "@/lib/data";
 import { computeTotals } from "@/lib/pricing";
 import { productLabel } from "@/lib/utils";
 import { ensureStripeCustomer, isStripeConfigured } from "@/lib/billing";
+import { LIMITS, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export async function POST() {
   const userId = await getCurrentUserId();
   if (!userId) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const limited = await rateLimit(`checkout:user:${userId}`, LIMITS.checkoutPerUser);
+  if (!limited.ok) {
+    return tooManyRequests(
+      "Too many checkout attempts. Please wait a few minutes and try again.",
+      limited,
+    );
   }
 
   if (!isStripeConfigured()) {

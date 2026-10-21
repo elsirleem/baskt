@@ -195,3 +195,13 @@ model RecipeIngredient {
   @@index([recipeId])
   @@index([productId]) // "Use in these recipes" on product pages
 }
+
+/// Fixed-window attempt counters (sign-in, sign-up, password change, checkout),
+/// kept in Postgres so limits hold across every server instance.
+model RateLimit {
+  key     String   @id // e.g. "signin:email:ada@example.com"
+  count   Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt]) // clearing out expired windows
+}

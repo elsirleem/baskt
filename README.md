@@ -132,6 +132,31 @@ npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prism
 # should print "No difference detected"; anything else means the database had drifted
 ```
 
+## Security
+
+- **Payments:** card details are entered on Stripe's hosted checkout page and never
+  reach this server; Stripe webhooks are signature-checked; prices and totals are
+  always computed on the server.
+- **Attempt limits** (`lib/rate-limit.ts`). Counters live in the `RateLimit` table, so
+  limits hold across every server instance:
+
+  | Action | Limit |
+  | --- | --- |
+  | Sign-in | 10 per account and 50 per network, per 15 minutes |
+  | Sign-up | 5 per network per hour |
+  | Password change | 5 per account per 15 minutes |
+  | Checkout (basket, membership, Fresh Box) | 10 per account per 10 minutes (HTTP 429) |
+
+  "Per network" uses the `X-Forwarded-For` header set by your host's proxy (Vercel,
+  Cloudflare, nginx). Run the app behind such a proxy in production; without one the
+  header can be faked, which is why sign-in is also limited per account.
+- **Browser security headers** (`next.config.ts`): Content-Security-Policy, HSTS,
+  X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and no
+  `X-Powered-By`. The CSP allows inline scripts (no nonces) so pages can still be
+  cached; switch to nonces (see the Next.js CSP guide) if you need a stricter policy.
+- **Passwords** are hashed with bcrypt at cost 12 (older cost-10 hashes keep working).
+- **Docker** runs the app as the unprivileged `node` user.
+
 ## How the money works
 
 - **Prices** are stored in integer pence (`priceCents`), currency GBP.

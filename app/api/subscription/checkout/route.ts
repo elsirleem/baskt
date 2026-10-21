@@ -2,11 +2,20 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { getCurrentUserId } from "@/lib/data";
 import { ensureStripeCustomer, isStripeConfigured, TIER_PRICE_ENV } from "@/lib/billing";
+import { LIMITS, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const userId = await getCurrentUserId();
   if (!userId) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const limited = await rateLimit(`checkout:user:${userId}`, LIMITS.checkoutPerUser);
+  if (!limited.ok) {
+    return tooManyRequests(
+      "Too many checkout attempts. Please wait a few minutes and try again.",
+      limited,
+    );
   }
   if (!isStripeConfigured()) {
     return NextResponse.json(
