@@ -13,7 +13,8 @@ class TooManyAttempts extends CredentialsSignin {
 }
 
 const credentialsSchema = z.object({
-  email: z.string().email(),
+  // Emails are stored lowercase, so "Ada@x.com" and "ada@x.com" are one account.
+  email: z.string().trim().toLowerCase().email(),
   password: z.string().min(8),
 });
 
@@ -38,10 +39,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
-        const byEmail = await rateLimit(
-          `signin:email:${email.trim().toLowerCase()}`,
-          LIMITS.signInPerEmail,
-        );
+        const byEmail = await rateLimit(`signin:email:${email}`, LIMITS.signInPerEmail);
         if (!byEmail.ok) throw new TooManyAttempts();
 
         const user = await prisma.user.findUnique({ where: { email } });

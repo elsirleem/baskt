@@ -11,6 +11,7 @@ import {
   FREE_DELIVERY_THRESHOLD_CENTS,
 } from "@/lib/pricing";
 import { FRESH_BOX_SIZES } from "@/lib/freshbox";
+import { describeShortfall, stockShortfalls } from "@/lib/stock";
 import { QuantityControl, RemoveFromCartButton } from "@/components/CartControls";
 import { CheckoutButton } from "@/components/CheckoutButton";
 import { EmptyState, PageTitle, cardClass } from "@/components/ui";
@@ -78,6 +79,9 @@ export default async function CartPage() {
     ? 100
     : Math.min(100, Math.round((discountedCents / FREE_DELIVERY_THRESHOLD_CENTS) * 100));
 
+  // Stock can change after items go in the basket; checkout waits until it fits.
+  const shortfalls = stockShortfalls(items);
+
   const freshActive = freshBox && freshBox.status !== "canceled";
   const freshFromCents = Math.min(...Object.values(FRESH_BOX_SIZES).map((s) => s.priceCents));
   const testMode = process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_");
@@ -117,6 +121,16 @@ export default async function CartPage() {
             </div>
           </div>
 
+          {shortfalls.length > 0 && (
+            <div role="alert" className="mb-4 rounded-xl border-[1.5px] border-gold bg-gold-light px-4 py-3 text-sm text-ink">
+              <p className="font-semibold">Some items have less stock than your basket</p>
+              <p className="mt-0.5 text-ink-mid">
+                {shortfalls.map(describeShortfall).join(" · ")}. Update the quantities to check
+                out.
+              </p>
+            </div>
+          )}
+
           <ul className="space-y-3">
             {items.map((item) => (
               <li key={item.id} className={`${cardClass} flex items-center gap-3 p-3.5`}>
@@ -152,9 +166,20 @@ export default async function CartPage() {
                       .join(" · ")}
                   </p>
                   <div className="mt-1.5 flex items-center gap-3">
-                    <QuantityControl productId={item.productId} quantity={item.quantity} />
+                    <QuantityControl
+                      productId={item.productId}
+                      quantity={item.quantity}
+                      max={item.product.stock}
+                    />
                     <RemoveFromCartButton productId={item.productId} />
                   </div>
+                  {item.quantity > item.product.stock && (
+                    <p className="mt-1 text-xs font-semibold text-danger">
+                      {item.product.stock > 0
+                        ? `Only ${item.product.stock} left`
+                        : "Sold out — please remove it"}
+                    </p>
+                  )}
                 </div>
 
                 <span className="self-start font-display text-base font-bold text-brand">
@@ -221,7 +246,12 @@ export default async function CartPage() {
           )}
 
           <div className="mt-4">
-            <CheckoutButton label={`Checkout — ${formatPrice(totals.totalCents)}`} />
+            <CheckoutButton
+              label={`Checkout — ${formatPrice(totals.totalCents)}`}
+              blockedReason={
+                shortfalls.length > 0 ? "Update your basket to check out" : undefined
+              }
+            />
           </div>
           <p className="mt-3 text-center text-xs text-ink-soft">
             Secure checkout by Stripe — you&apos;ll add your UK delivery address there.

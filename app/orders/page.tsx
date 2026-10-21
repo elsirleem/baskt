@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
 import { getCurrentUserId, getOrders } from "@/lib/data";
 import { BackLink, EmptyState, PageTitle, cardClass } from "@/components/ui";
+import { OrderTracker, trackerTimes } from "@/components/OrderTracker";
+import { FULFILMENT_STEPS, stepIndex } from "@/lib/fulfilment";
 
 export const metadata = { title: "Your orders" };
 
@@ -43,7 +45,13 @@ export default async function OrdersPage() {
 
       <ul className="space-y-4">
         {orders.map((order) => {
-          const status = STATUS[order.status] ?? STATUS.CANCELLED;
+          const status =
+            order.status === "PAID"
+              ? {
+                  label: FULFILMENT_STEPS[stepIndex(order.fulfilment)].customerLabel,
+                  className: STATUS.PAID.className,
+                }
+              : (STATUS[order.status] ?? STATUS.CANCELLED);
           const address = [
             order.shippingName,
             order.shippingLine1,
@@ -55,7 +63,7 @@ export default async function OrdersPage() {
             .join(", ");
 
           return (
-            <li key={order.id} className={`${cardClass} p-4 md:p-5`}>
+            <li key={order.id} id={`order-${order.id}`} className={`${cardClass} scroll-mt-4 p-4 md:p-5`}>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="font-semibold text-ink">
@@ -74,6 +82,24 @@ export default async function OrdersPage() {
                   </span>
                 </div>
               </div>
+
+              {order.status === "PAID" && (
+                <div className="mt-4">
+                  <OrderTracker status={order.fulfilment} times={trackerTimes(order)} />
+                  {order.carrier && (
+                    <p className="mt-3 text-xs text-ink-mid">
+                      Sent with {order.carrier}
+                      {order.trackingNumber && (
+                        <>
+                          {" "}
+                          · Tracking number{" "}
+                          <span className="font-mono font-semibold">{order.trackingNumber}</span>
+                        </>
+                      )}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <ul className="mt-3 divide-y divide-line border-t border-line">
                 {order.items.map((item) => (

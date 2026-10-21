@@ -10,19 +10,44 @@ import { HeartIcon } from "@/components/icons";
 
 const MAX_QUANTITY = 99;
 
-/** Shows a tick for a moment after a successful add. */
+/**
+ * Adds to the basket, then shows a tick for a moment, or a short message when
+ * stock got in the way (sold out, or fewer added than asked).
+ */
 function useAdd(productId: string) {
   const [pending, startTransition] = useTransition();
   const [added, setAdded] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   const add = (quantity = 1) =>
     startTransition(async () => {
-      await addToCart(productId, quantity);
-      setAdded(true);
-      setTimeout(() => setAdded(false), 1500);
+      const result = await addToCart(productId, quantity);
+      const note = result.ok ? result.notice : result.error;
+      setMessage(note ?? null);
+      if (note) setTimeout(() => setMessage(null), 4000);
+      if (result.ok) {
+        setAdded(true);
+        setTimeout(() => setAdded(false), 1500);
+      }
     });
 
-  return { pending, added, add };
+  return { pending, added, message, add };
+}
+
+/** Small dark bubble above a compact button, announced to screen readers. */
+function Bubble({ message }: { message: string | null }) {
+  return (
+    <p
+      role="status"
+      className={
+        message
+          ? "absolute bottom-full right-0 z-10 mb-2 w-48 rounded-lg bg-ink px-2.5 py-1.5 text-left text-[11px] leading-snug text-white shadow-lg"
+          : "sr-only"
+      }
+    >
+      {message}
+    </p>
+  );
 }
 
 /** Compact add button: a green "+" square on product cards, or a "+ Add" pill. */
@@ -37,32 +62,38 @@ export function AddToCartButton({
   variant?: "icon" | "pill";
   disabled?: boolean;
 }) {
-  const { pending, added, add } = useAdd(productId);
+  const { pending, added, message, add } = useAdd(productId);
 
   if (variant === "pill") {
     return (
-      <button
-        type="button"
-        disabled={pending || disabled}
-        onClick={() => add()}
-        aria-label={`Add ${productName} to basket`}
-        className={`${buttonClass.soft} shrink-0`}
-      >
-        {disabled ? "Sold out" : added ? "✓ Added" : pending ? "Adding…" : "+ Add"}
-      </button>
+      <div className="relative shrink-0">
+        <button
+          type="button"
+          disabled={pending || disabled}
+          onClick={() => add()}
+          aria-label={`Add ${productName} to basket`}
+          className={buttonClass.soft}
+        >
+          {disabled ? "Sold out" : added ? "✓ Added" : pending ? "Adding…" : "+ Add"}
+        </button>
+        <Bubble message={message} />
+      </div>
     );
   }
 
   return (
-    <button
-      type="button"
-      disabled={pending || disabled}
-      onClick={() => add()}
-      aria-label={disabled ? `${productName} is out of stock` : `Add ${productName} to basket`}
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand text-lg font-light leading-none text-white transition hover:bg-brand-light disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-soft"
-    >
-      {added ? "✓" : pending ? "…" : "+"}
-    </button>
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        disabled={pending || disabled}
+        onClick={() => add()}
+        aria-label={disabled ? `${productName} is out of stock` : `Add ${productName} to basket`}
+        className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-lg font-light leading-none text-white transition hover:bg-brand-light disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-soft"
+      >
+        {added ? "✓" : pending ? "…" : "+"}
+      </button>
+      <Bubble message={message} />
+    </div>
   );
 }
 
@@ -71,18 +102,19 @@ export function AddWithQuantity({
   productId,
   priceCents,
   currency,
-  disabled = false,
+  stock,
 }: {
   productId: string;
   priceCents: number;
   currency: string;
-  disabled?: boolean;
+  stock: number;
 }) {
   const [quantity, setQuantity] = useState(1);
-  const { pending, added, add } = useAdd(productId);
+  const { pending, added, message, add } = useAdd(productId);
+  const disabled = stock <= 0;
+  const max = Math.max(1, Math.min(MAX_QUANTITY, stock));
 
-  const change = (delta: number) =>
-    setQuantity((q) => Math.min(Math.max(q + delta, 1), MAX_QUANTITY));
+  const change = (delta: number) => setQuantity((q) => Math.min(Math.max(q + delta, 1), max));
 
   return (
     <div>
@@ -104,7 +136,7 @@ export function AddWithQuantity({
           <button
             type="button"
             onClick={() => change(1)}
-            disabled={quantity >= MAX_QUANTITY}
+            disabled={quantity >= max}
             aria-label="Increase quantity"
             className="w-6 text-xl font-bold leading-none text-brand disabled:opacity-40"
           >
@@ -127,6 +159,9 @@ export function AddWithQuantity({
               ? "Adding…"
               : `Add to Basket — ${formatPrice(priceCents * quantity, currency)}`}
       </button>
+      <p role="status" className={message ? "mt-2 text-sm font-medium text-gold-dark" : "sr-only"}>
+        {message}
+      </p>
     </div>
   );
 }

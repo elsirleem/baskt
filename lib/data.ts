@@ -1,4 +1,5 @@
 import type { Prisma, SubTier } from "@prisma/client";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
@@ -75,6 +76,70 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
     select: { isAdmin: true },
   });
   return user?.isAdmin ?? false;
+}
+
+/**
+ * Sends non-admins to the home page. Every admin page and admin query calls this:
+ * the admin layout's check alone isn't enough, because layouts don't re-run on
+ * client-side navigation (see the Next.js authentication guide).
+ */
+export async function requireAdmin(): Promise<void> {
+  if (!(await isCurrentUserAdmin())) redirect("/");
+}
+
+export type AdminOrderView = "to-fulfil" | "shipped" | "delivered" | "unpaid";
+
+const ADMIN_ORDER_FILTERS: Record<AdminOrderView, Prisma.OrderWhereInput> = {
+  "to-fulfil": { status: "PAID", fulfilment: { in: ["UNFULFILLED", "PACKED"] } },
+  shipped: { status: "PAID", fulfilment: "SHIPPED" },
+  delivered: { status: "PAID", fulfilment: "DELIVERED" },
+  unpaid: { status: { in: ["PENDING", "CANCELLED"] } },
+};
+
+/** Orders for one admin tab: oldest first when packing, newest first otherwise. */
+export async function getAdminOrders(view: AdminOrderView) {
+  await requireAdmin();
+  return prisma.order.findMany({
+    where: ADMIN_ORDER_FILTERS[view],
+    include: {
+      user: { select: { name: true, email: true } },
+      items: { select: { quantity: true } },
+    },
+    orderBy: { createdAt: view === "to-fulfil" ? "asc" : "desc" },
+    take: 100,
+  });
+}
+
+export async function getAdminOrderCounts(): Promise<Record<AdminOrderView, number>> {
+  await requireAdmin();
+  const views = Object.keys(ADMIN_ORDER_FILTERS) as AdminOrderView[];
+  const counts = await Promise.all(
+    views.map((view) => prisma.order.count({ where: ADMIN_ORDER_FILTERS[view] })),
+  );
+  return Object.fromEntries(views.map((view, i) => [view, counts[i]])) as Record<
+    AdminOrderView,
+    number
+  >;
+}
+
+export async function getAdminOrder(id: string) {
+  await requireAdmin();
+  return prisma.order.findUnique({
+    where: { id },
+    include: {
+      user: { select: { name: true, email: true } },
+      items: { include: { product: { select: { slug: true, stock: true } } } },
+    },
+  });
+}
+
+/** The customer's most recent paid order that hasn't been delivered yet. */
+export async function getActiveOrder(userId: string) {
+  return prisma.order.findFirst({
+    where: { userId, status: "PAID", fulfilment: { not: "DELIVERED" } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, fulfilment: true },
+  });
 }
 
 /** Subscription tier for a user, defaulting to PAYG when no active subscription exists. */

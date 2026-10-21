@@ -127,6 +127,27 @@ test("still marks the order paid when no address was collected", async () => {
   expect(saved.shippingLine1).toBeNull();
 });
 
+test("records when it was paid and takes the items out of stock once", async () => {
+  const { product, order } = await referredBuyerWithOrder(); // 2 × the product, stock 100
+
+  await Promise.all(Array.from({ length: 5 }, () => finalizeOrderPaid(order.id, shipping)));
+
+  expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).paidAt).toBeInstanceOf(
+    Date,
+  );
+  expect((await prisma.product.findUniqueOrThrow({ where: { id: product.id } })).stock).toBe(98);
+});
+
+test("two customers paying at once both come out of stock (none lost)", async () => {
+  const { product, order } = await referredBuyerWithOrder();
+  const other = await prisma.user.create({ data: { email: "other@example.com", passwordHash: "x" } });
+  const otherOrder = await pendingOrder(other.id, product.id, 0);
+
+  await Promise.all([finalizeOrderPaid(order.id), finalizeOrderPaid(otherOrder.id)]);
+
+  expect((await prisma.product.findUniqueOrThrow({ where: { id: product.id } })).stock).toBe(96);
+});
+
 test("an unknown order id does nothing", async () => {
   await expect(finalizeOrderPaid("no-such-order")).resolves.toBeUndefined();
 });

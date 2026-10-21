@@ -83,3 +83,49 @@ export const formAlert = (page: Page) => page.locator("form [role=alert]");
 
 /** Whether real Stripe keys are set (some tests only make sense without them). */
 export const stripeConfigured = () => !!configuredEnv(process.env.STRIPE_SECRET_KEY);
+
+/** A throwaway product (slug "e2e-…", deleted by the teardown) with a chosen stock level. */
+export async function createTestProduct(stock: number) {
+  const id = stamp();
+  return db.product.create({
+    data: {
+      slug: `e2e-stock-${id}`,
+      name: `E2E Test Spice ${id}`,
+      description: "Created by an end-to-end test.",
+      priceCents: 300,
+      imageUrl: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600&q=80",
+      category: "Spices",
+      stock,
+    },
+  });
+}
+
+/**
+ * A paid order with a delivery address, as Stripe would leave it (real payments
+ * need Stripe keys). Deleted with its e2e user by the teardown.
+ */
+export async function createPaidOrder(email: string) {
+  const user = await db.user.findUniqueOrThrow({ where: { email } });
+  const product = await db.product.findUniqueOrThrow({ where: { slug: "white-garri-1kg" } });
+  return db.order.create({
+    data: {
+      userId: user.id,
+      status: "PAID",
+      paidAt: new Date(),
+      subtotalCents: 898,
+      deliveryCents: 499,
+      totalCents: 1397,
+      shippingName: "Ada Obi",
+      shippingPhone: "+447700900123",
+      shippingLine1: "1 High Street",
+      shippingCity: "London",
+      shippingPostcode: "E1 6AN",
+      shippingCountry: "GB",
+      items: {
+        create: [
+          { productId: product.id, quantity: 2, unitPriceCents: 449, nameSnapshot: "White Garri (1kg)" },
+        ],
+      },
+    },
+  });
+}

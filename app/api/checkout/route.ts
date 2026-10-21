@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUserId, getCart, getAccount } from "@/lib/data";
 import { computeTotals } from "@/lib/pricing";
 import { productLabel } from "@/lib/utils";
+import { describeShortfall, stockShortfalls } from "@/lib/stock";
 import { ensureStripeCustomer, isStripeConfigured } from "@/lib/billing";
 import { LIMITS, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
@@ -22,16 +23,25 @@ export async function POST() {
     );
   }
 
+  const [items, account] = await Promise.all([getCart(userId), getAccount(userId)]);
+  if (items.length === 0) {
+    return NextResponse.json({ error: "Your basket is empty" }, { status: 400 });
+  }
+
+  // Stock may have changed since things went in the basket.
+  const shortfalls = stockShortfalls(items);
+  if (shortfalls.length > 0) {
+    return NextResponse.json(
+      { error: `${shortfalls.map(describeShortfall).join("; ")}. Please update your basket.` },
+      { status: 409 },
+    );
+  }
+
   if (!isStripeConfigured()) {
     return NextResponse.json(
       { error: "Stripe is not configured. Add STRIPE_SECRET_KEY to .env." },
       { status: 500 },
     );
-  }
-
-  const [items, account] = await Promise.all([getCart(userId), getAccount(userId)]);
-  if (items.length === 0) {
-    return NextResponse.json({ error: "Your basket is empty" }, { status: 400 });
   }
 
   const subtotalCents = items.reduce(
@@ -117,6 +127,9 @@ export async function POST() {
       phone_number_collection: { enabled: true },
       // Save the address on the Stripe customer so it's prefilled next time.
       customer_update: { shipping: "auto" },
+      // Stripe's minimum; a short window means fewer abandoned sessions holding
+      // a basket whose stock may sell out in the meantime.
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
       success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/cart`,
       client_reference_id: order.id,

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUserId, getAccount, getAccountStats } from "@/lib/data";
+import { getActiveOrder, getCurrentUserId, getAccount, getAccountStats } from "@/lib/data";
+import { FULFILMENT_STEPS, stepIndex } from "@/lib/fulfilment";
 import { ensureReferralCode } from "@/lib/referral";
 import { formatPrice, formatWholePrice } from "@/lib/utils";
 import { TIER_LABEL, TIER_DISCOUNT } from "@/lib/pricing";
@@ -76,10 +77,11 @@ export default async function AccountPage(props: {
   }
 
   const code = await ensureReferralCode(userId);
-  const [account, stats, freshBox] = await Promise.all([
+  const [account, stats, freshBox, activeOrder] = await Promise.all([
     getAccount(userId),
     getAccountStats(userId),
     prisma.freshBoxSubscription.findUnique({ where: { userId } }),
+    getActiveOrder(userId),
   ]);
   const { user, tier } = account;
   const freshActive = freshBox && freshBox.status !== "canceled";
@@ -158,6 +160,13 @@ export default async function AccountPage(props: {
       </div>
 
       <ProfileSection title="Orders & Wishlist">
+        {activeOrder && (
+          <RowLink
+            href={`/orders#order-${activeOrder.id}`}
+            icon="🚚"
+            label={`Track your order · ${FULFILMENT_STEPS[stepIndex(activeOrder.fulfilment)].customerLabel}`}
+          />
+        )}
         <RowLink href="/orders" icon="📦" label="Order history" />
         <RowLink href="/wishlist" icon="🤍" label="Wishlist" />
       </ProfileSection>

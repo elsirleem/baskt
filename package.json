@@ -12,6 +12,7 @@
     "test:db": "vitest run --project db",
     "test:e2e": "playwright test",
     "db:migrate": "prisma migrate dev",
+    "postdb:migrate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",

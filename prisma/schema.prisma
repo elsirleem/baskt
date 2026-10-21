@@ -126,6 +126,14 @@ enum OrderStatus {
   CANCELLED
 }
 
+/// Where a paid order is in packing and delivery (payment lives in OrderStatus).
+enum FulfilmentStatus {
+  UNFULFILLED
+  PACKED
+  SHIPPED
+  DELIVERED
+}
+
 model Order {
   id                 String      @id @default(cuid())
   userId             String
@@ -146,11 +154,20 @@ model Order {
   shippingCity       String?
   shippingPostcode   String?
   shippingCountry    String?
+  paidAt             DateTime?
+  // packing and delivery, updated by admins
+  fulfilment         FulfilmentStatus @default(UNFULFILLED)
+  packedAt           DateTime?
+  shippedAt          DateTime?
+  deliveredAt        DateTime?
+  carrier            String?
+  trackingNumber     String?
   createdAt          DateTime    @default(now())
   user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items              OrderItem[]
 
   @@index([userId, createdAt]) // order history, newest first
+  @@index([status, fulfilment, createdAt]) // admin order lists
 }
 
 model OrderItem {

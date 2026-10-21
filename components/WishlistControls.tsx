@@ -1,20 +1,34 @@
 "use client";
 
-import { useTransition } from "react";
-import { removeFromWishlist, moveToCart } from "@/lib/actions/wishlist";
+import { useState, useTransition } from "react";
+import { moveToCart } from "@/lib/actions/cart";
+import { removeFromWishlist } from "@/lib/actions/wishlist";
 import { buttonClass } from "@/components/ui";
 
 export function MoveToCartButton({ productId }: { productId: string }) {
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   return (
-    <button
-      type="button"
-      disabled={pending}
-      onClick={() => startTransition(() => moveToCart(productId))}
-      className={buttonClass.soft}
-    >
-      {pending ? "Moving…" : "Move to basket"}
-    </button>
+    <>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            const result = await moveToCart(productId);
+            setError(result.ok ? null : result.error);
+          })
+        }
+        className={buttonClass.soft}
+      >
+        {pending ? "Moving…" : "Move to basket"}
+      </button>
+      {error && (
+        <span role="status" className="text-xs text-gold-dark">
+          {error}
+        </span>
+      )}
+    </>
   );
 }
 
