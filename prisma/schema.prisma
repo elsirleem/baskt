@@ -87,6 +87,7 @@ model Product {
   size           String? // pack size shown under the name, e.g. "1kg", "5-pack"
   badges         String[] @default([]) // short highlights, e.g. "Co-op sourced"
   stock          Int      @default(100)
+  archivedAt     DateTime? // hidden from the shop but kept for past orders
   createdAt      DateTime @default(now())
 
   cartItems         CartItem[]
@@ -121,9 +122,10 @@ model WishlistItem {
 }
 
 enum OrderStatus {
-  PENDING
+  PENDING // checkout started, not paid yet
+  AWAITING_PAYMENT // checkout finished with a delayed method (e.g. bank debit); money not in yet
   PAID
-  CANCELLED
+  CANCELLED // checkout expired, payment failed, or abandoned
 }
 
 /// Where a paid order is in packing and delivery (payment lives in OrderStatus).

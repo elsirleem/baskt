@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
-import { finalizeOrderPaid, shippingFromSession } from "@/lib/orders";
+import {
+  cancelUnpaidOrder,
+  finalizeOrderPaid,
+  markAwaitingPayment,
+  shippingFromSession,
+} from "@/lib/orders";
 import { syncStripeSubscription } from "@/lib/subscription";
 import { configuredEnv } from "@/lib/env";
 
@@ -28,13 +33,33 @@ export async function POST(request: Request) {
   }
 
   switch (event.type) {
-    case "checkout.session.completed": {
+    case "checkout.session.completed":
+    case "checkout.session.async_payment_succeeded": {
       const session = event.data.object as Stripe.Checkout.Session;
       // One-off product orders carry an orderId; subscription checkouts don't.
-      if (session.mode === "payment" && session.metadata?.orderId) {
-        await finalizeOrderPaid(session.metadata.orderId, shippingFromSession(session));
+      const orderId = session.mode === "payment" ? session.metadata?.orderId : undefined;
+      if (orderId) {
+        // Cards are paid by now. Delayed methods (bank debits) finish checkout
+        // "unpaid" and confirm later with async_payment_succeeded.
+        if (session.payment_status === "paid" || session.payment_status === "no_payment_required") {
+          await finalizeOrderPaid(orderId, shippingFromSession(session));
+        } else {
+          await markAwaitingPayment(orderId, shippingFromSession(session));
+        }
       } else if (session.mode === "subscription" && session.subscription) {
         await syncStripeSubscription(String(session.subscription));
+      }
+      break;
+    }
+    case "checkout.session.expired":
+    case "checkout.session.async_payment_failed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const orderId = session.mode === "payment" ? session.metadata?.orderId : undefined;
+      if (orderId) {
+        await cancelUnpaidOrder(orderId);
+        // The one-time discount made for this checkout can't be used now.
+        const couponId = session.metadata?.couponId;
+        if (couponId) await stripe.coupons.del(couponId).catch(() => {});
       }
       break;
     }

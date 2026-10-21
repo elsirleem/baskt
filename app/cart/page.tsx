@@ -123,7 +123,7 @@ export default async function CartPage() {
 
           {shortfalls.length > 0 && (
             <div role="alert" className="mb-4 rounded-xl border-[1.5px] border-gold bg-gold-light px-4 py-3 text-sm text-ink">
-              <p className="font-semibold">Some items have less stock than your basket</p>
+              <p className="font-semibold">Some items in your basket can&apos;t be bought as they are</p>
               <p className="mt-0.5 text-ink-mid">
                 {shortfalls.map(describeShortfall).join(" · ")}. Update the quantities to check
                 out.
@@ -173,12 +173,18 @@ export default async function CartPage() {
                     />
                     <RemoveFromCartButton productId={item.productId} />
                   </div>
-                  {item.quantity > item.product.stock && (
+                  {item.product.archivedAt ? (
                     <p className="mt-1 text-xs font-semibold text-danger">
-                      {item.product.stock > 0
-                        ? `Only ${item.product.stock} left`
-                        : "Sold out — please remove it"}
+                      No longer available — please remove it
                     </p>
+                  ) : (
+                    item.quantity > item.product.stock && (
+                      <p className="mt-1 text-xs font-semibold text-danger">
+                        {item.product.stock > 0
+                          ? `Only ${item.product.stock} left`
+                          : "Sold out — please remove it"}
+                      </p>
+                    )
                   )}
                 </div>
 

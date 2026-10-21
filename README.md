@@ -32,7 +32,7 @@ get a top menu.
 | Secure checkout with UK delivery address + phone, order records (discount/delivery/credit/address snapshot) | `app/api/checkout`, `app/api/webhooks/stripe` |
 | Order history with delivery tracking (received → packed → on its way → delivered) | `app/orders/page.tsx`, `components/OrderTracker.tsx` |
 | **Stock control**: baskets capped at stock, checkout re-checks, paid orders reduce stock | `lib/stock.ts`, `lib/actions/cart.ts`, `lib/orders.ts` |
-| Admin product management (CRUD, stock warnings) | `app/admin`, `lib/actions/admin.ts` |
+| Admin product management (add, edit, archive/restore, delete if never ordered, stock warnings) | `app/admin`, `lib/actions/admin.ts` |
 | **Admin orders**: to fulfil / on the way / delivered / unpaid, address and phone, mark packed → shipped (carrier + tracking) → delivered | `app/admin/orders`, `lib/fulfilment.ts` |
 | Profile (plan, stats, Fresh Box, referrals, credit) | `app/account/page.tsx` |
 
@@ -173,9 +173,19 @@ npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prism
   server, and the Stripe payment page expires after 30 minutes (Stripe's minimum).
   Paying takes the items out of stock. If two people pay for the last one at once,
   stock goes below zero and the admin products list shows "Oversold by N".
+- **Always pounds:** checkouts turn off Stripe's Adaptive Pricing, so customers aren't offered
+  other currencies (with a conversion fee) or foreign-only payment methods.
+- **Order states:** `PENDING` (checkout open) → `PAID`, or `AWAITING_PAYMENT` first for
+  delayed methods such as bank debits (stock, credit and rewards wait until Stripe confirms
+  the money), or `CANCELLED` when the checkout expires or a delayed payment fails. Orders
+  still pending an hour after checkout started are cancelled when order lists are viewed, as
+  a backup for a missed "expired" notification. If Stripe later confirms a payment anyway,
+  the order is revived.
+- **Discounts at checkout** are one-time Stripe coupons: single-use, valid only until that
+  checkout expires, and deleted when it does.
 - **Order finalization** (`lib/orders.ts`) is idempotent and shared by the webhook and the
-  success page: it atomically flips the order PENDING → PAID, so even if both run at once,
-  the basket is cleared, credit deducted, and referral rewards paid exactly once.
+  success page: it atomically flips the order to PAID, so even if both run at once, the
+  basket is cleared, credit deducted, and referral rewards paid exactly once.
 
 ## Memberships
 
@@ -204,8 +214,10 @@ npm run make-admin -- you@example.com    # (also accepts multiple emails)
 An **Admin** link appears in the header (desktop) and in the Profile menu; non-admins are
 redirected from `/admin`. Admin has two tabs:
 
-- **Products:** add, edit and delete products; stock shows "N left", "Sold out" or
-  "Oversold by N".
+- **Products:** add and edit products; stock shows "N left", "Sold out" or "Oversold by N".
+  **Archive** hides a product from the shop (search, categories, recipes, baskets) while past
+  orders keep it, and **Restore** brings it back. **Delete** is only offered for products
+  that have never been ordered.
 - **Orders:** paid orders waiting to be packed (oldest first), on the way, delivered, and
   unpaid. Each order shows the items, totals, delivery address and phone, and buttons to
   mark it packed, shipped (choose the carrier, add a tracking number) and delivered.
@@ -218,13 +230,19 @@ enough because layouts don't re-run on client-side navigation.
 ## Testing payments
 
 Stripe **test mode**: card `4242 4242 4242 4242`, any future expiry, any CVC/postcode.
-Forward webhooks locally with:
+Forward webhooks to your machine with the [Stripe CLI](https://docs.stripe.com/stripe-cli)
+(recent versions require the event list):
 
 ```bash
-stripe listen --forward-to localhost:3000/api/webhooks/stripe
+stripe listen --forward-to localhost:3000/api/webhooks/stripe \
+  --events checkout.session.completed,checkout.session.expired,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted
 ```
 
+It prints a `whsec_…` secret for `STRIPE_WEBHOOK_SECRET`. If `stripe login` has expired, add
+`--api-key "$STRIPE_SECRET_KEY"` (after `set -a; . ./.env; set +a`) instead of logging in again.
 Without the CLI, the success page still confirms orders by verifying the session directly.
+In the Stripe Dashboard, save the [customer portal settings](https://dashboard.stripe.com/test/settings/billing/portal)
+once, or "Manage subscription" fails.
 
 ## Testing
 
@@ -233,6 +251,7 @@ Without the CLI, the success page still confirms orders by verifying the session
 | `npm test` | Unit tests: pricing and delivery rules, Fresh Box dates, formatting, input checks. No database needed. |
 | `npm run test:db` | Database tests: marking orders paid (including the webhook and success page finishing at the same moment) and attempt limits. |
 | `npm run test:e2e` | Browser tests (Playwright): shopping, accounts, admin, security limits and headers. |
+| `E2E_STRIPE=1 npm run test:e2e` | Also runs a real purchase, AfroPlus subscription and billing portal visit through Stripe's test mode (needs test keys; deletes its test customer in Stripe afterwards). |
 
 - **Database tests** use a separate database: your `DATABASE_URL` with `_test` added to its
   name (or `TEST_DATABASE_URL`). It's created and migrated automatically, emptied between

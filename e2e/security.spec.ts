@@ -4,7 +4,6 @@ import {
   PASSWORD,
   register,
   signIn,
-  stripeConfigured,
   submitPasswordChange,
   test,
   testEmail,
@@ -65,7 +64,7 @@ test("password changes are limited to 5 attempts", async ({ page }) => {
 });
 
 test("checkout is limited to 10 attempts per 10 minutes", async ({ page }) => {
-  test.skip(stripeConfigured(), "would create real Stripe test sessions");
+  // The basket is empty, so these requests stop before reaching Stripe.
   await register(page, testEmail("cklimit"));
   await expect(page).toHaveURL("/");
 

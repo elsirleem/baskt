@@ -12,14 +12,21 @@ describe("stockShortfalls", () => {
     expect(
       stockShortfalls([line("Garri", 2, 5), line("Palm Oil", 3, 2), line("Egusi", 1, 0)]),
     ).toEqual([
-      { name: "Palm Oil", requested: 3, available: 2 },
-      { name: "Egusi", requested: 1, available: 0 },
+      { name: "Palm Oil", requested: 3, available: 2, archived: false },
+      { name: "Egusi", requested: 1, available: 0, archived: false },
     ]);
   });
 
   test("oversold stock (below zero) counts as none left", () => {
     expect(stockShortfalls([line("Garri", 1, -2)])).toEqual([
-      { name: "Garri", requested: 1, available: 0 },
+      { name: "Garri", requested: 1, available: 0, archived: false },
+    ]);
+  });
+
+  test("archived products can't be bought, whatever the stock", () => {
+    const archived = { quantity: 1, product: { name: "Old Spice Mix", stock: 50, archivedAt: new Date() } };
+    expect(stockShortfalls([archived])).toEqual([
+      { name: "Old Spice Mix", requested: 1, available: 0, archived: true },
     ]);
   });
 
@@ -28,11 +35,14 @@ describe("stockShortfalls", () => {
   });
 
   test("messages say 'sold out' or 'only N left'", () => {
-    expect(describeShortfall({ name: "Egusi", requested: 1, available: 0 })).toBe(
+    expect(describeShortfall({ name: "Egusi", requested: 1, available: 0, archived: false })).toBe(
       "Egusi is sold out",
     );
-    expect(describeShortfall({ name: "Palm Oil", requested: 3, available: 2 })).toBe(
+    expect(describeShortfall({ name: "Palm Oil", requested: 3, available: 2, archived: false })).toBe(
       "Palm Oil: only 2 left",
+    );
+    expect(describeShortfall({ name: "Old Spice Mix", requested: 1, available: 0, archived: true })).toBe(
+      "Old Spice Mix is no longer available",
     );
   });
 });

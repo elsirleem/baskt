@@ -37,7 +37,7 @@ test("checkout waits when stock drops below what's in the basket", async ({ page
   await db.product.update({ where: { id: product.id }, data: { stock: 1 } });
 
   await page.goto("/cart");
-  await expect(page.getByRole("alert").filter({ hasText: "less stock than your basket" })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "can't be bought as they are" })).toBeVisible();
   await expect(page.getByText("Only 1 left", { exact: true })).toBeVisible();
   const checkout = page.getByRole("button", { name: "Update your basket to check out" });
   await expect(checkout).toBeDisabled();

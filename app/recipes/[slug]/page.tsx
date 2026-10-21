@@ -29,7 +29,12 @@ export default async function RecipePage(props: {
   const tier = userId ? await getUserTier(userId) : "PAYG";
   const locked = recipe.isPremium && tier !== "PLUS";
 
-  const shoppableIds = recipe.ingredients
+  // Archived products show as plain ingredients (nothing to buy).
+  const ingredients = recipe.ingredients.map((ing) => ({
+    ...ing,
+    product: ing.product && !ing.product.archivedAt ? ing.product : null,
+  }));
+  const shoppableIds = ingredients
     .filter((i) => i.product && i.product.stock > 0)
     .map((i) => i.product!.id);
 
@@ -83,7 +88,7 @@ export default async function RecipePage(props: {
                 Ingredients — tap to add 🛒
               </h2>
               <ul>
-                {recipe.ingredients.map((ing) => (
+                {ingredients.map((ing) => (
                   <li
                     key={ing.id}
                     className="flex items-center gap-3 border-b border-line py-2.5 last:border-0"

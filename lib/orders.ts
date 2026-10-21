@@ -43,10 +43,11 @@ export async function finalizeOrderPaid(
   shipping?: ShippingDetails,
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
-    // Claim the order atomically: only one caller can flip PENDING → PAID, so a
-    // racing webhook and success page can't both apply credit and rewards.
+    // Claim the order atomically: only one caller can flip it to PAID, so a racing
+    // webhook and success page can't both apply credit and rewards. A cancelled
+    // order is revived too: if Stripe says the money arrived, the order stands.
     const claimed = await tx.order.updateMany({
-      where: { id: orderId, status: "PENDING" },
+      where: { id: orderId, status: { in: ["PENDING", "AWAITING_PAYMENT", "CANCELLED"] } },
       data: { status: "PAID", paidAt: new Date(), ...shipping },
     });
     if (claimed.count === 0) return;
@@ -93,5 +94,47 @@ export async function finalizeOrderPaid(
         data: { creditCents: { increment: REFERRAL_REWARD_CENTS } },
       });
     }
+  });
+}
+
+/**
+ * Checkout finished with a delayed payment method (e.g. a bank debit): keep the
+ * address, but don't take stock or credit until Stripe confirms the money.
+ */
+export async function markAwaitingPayment(
+  orderId: string,
+  shipping?: ShippingDetails,
+): Promise<void> {
+  await prisma.order.updateMany({
+    where: { id: orderId, status: "PENDING" },
+    data: { status: "AWAITING_PAYMENT", ...shipping },
+  });
+}
+
+/** The checkout expired or a delayed payment failed: cancel unless it was paid. */
+export async function cancelUnpaidOrder(orderId: string): Promise<void> {
+  await prisma.order.updateMany({
+    where: { id: orderId, status: { in: ["PENDING", "AWAITING_PAYMENT"] } },
+    data: { status: "CANCELLED" },
+  });
+}
+
+/** Checkouts expire after 30 minutes, so anything still pending after an hour was abandoned. */
+const ABANDONED_AFTER_MS = 60 * 60 * 1000;
+
+/**
+ * Backup for a missed "checkout expired" notification: cancels orders still
+ * PENDING an hour after checkout started. Runs when order lists are viewed (there's
+ * no job scheduler yet). If Stripe later confirms a payment anyway, finalizeOrderPaid
+ * revives the order.
+ */
+export async function cancelAbandonedOrders(userId?: string): Promise<void> {
+  await prisma.order.updateMany({
+    where: {
+      status: "PENDING",
+      createdAt: { lt: new Date(Date.now() - ABANDONED_AFTER_MS) },
+      ...(userId && { userId }),
+    },
+    data: { status: "CANCELLED" },
   });
 }
