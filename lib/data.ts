@@ -1,14 +1,21 @@
+import type { Prisma, SubTier } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
-export async function getProducts(category?: string, query?: string) {
-  const where: import("@prisma/client").Prisma.ProductWhereInput = {};
+export async function getProducts(
+  opts: { category?: string; query?: string; privateLabel?: boolean } = {},
+) {
+  const where: Prisma.ProductWhereInput = {};
 
-  if (category && category !== "All") {
-    where.category = category;
+  if (opts.category && opts.category !== "All") {
+    where.category = opts.category;
   }
 
-  const q = query?.trim();
+  if (opts.privateLabel) {
+    where.isPrivateLabel = true;
+  }
+
+  const q = opts.query?.trim();
   if (q) {
     where.OR = [
       { name: { contains: q, mode: "insensitive" } },
@@ -36,10 +43,27 @@ export async function getProductBySlug(slug: string) {
   return prisma.product.findUnique({ where: { slug } });
 }
 
+/** Recipes that call for a product, for the "Use in these recipes" links. */
+export async function getRecipesUsingProduct(productId: string) {
+  return prisma.recipe.findMany({
+    where: { ingredients: { some: { productId } } },
+    select: { slug: true, title: true, isPremium: true },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
 /** Returns the signed-in user's id, or null if not authenticated. */
 export async function getCurrentUserId(): Promise<string | null> {
   const session = await auth();
   return session?.user?.id ?? null;
+}
+
+/** Name and admin flag for the header. */
+export async function getUserSummary(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true, isAdmin: true },
+  });
 }
 
 /** Returns whether the signed-in user is an admin. */
@@ -52,8 +76,6 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
   });
   return user?.isAdmin ?? false;
 }
-
-import type { SubTier } from "@prisma/client";
 
 /** Subscription tier for a user, defaulting to PAYG when no active subscription exists. */
 export async function getUserTier(userId: string): Promise<SubTier> {
@@ -70,6 +92,7 @@ export async function getAccount(userId: string) {
         id: true,
         name: true,
         email: true,
+        isAdmin: true,
         creditCents: true,
         referralCode: true,
         referredById: true,
@@ -81,6 +104,19 @@ export async function getAccount(userId: string) {
   const tier: SubTier =
     subscription && subscription.status === "active" ? subscription.tier : "PAYG";
   return { user, subscription, tier };
+}
+
+/** Paid order count and lifetime savings (member discounts + credit used). */
+export async function getAccountStats(userId: string) {
+  const result = await prisma.order.aggregate({
+    where: { userId, status: "PAID" },
+    _count: true,
+    _sum: { discountCents: true, creditAppliedCents: true },
+  });
+  return {
+    orderCount: result._count,
+    savedCents: (result._sum.discountCents ?? 0) + (result._sum.creditAppliedCents ?? 0),
+  };
 }
 
 export async function getRecipes() {

@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addManyToCart } from "@/lib/actions/cart";
+import { buttonClass } from "@/components/ui";
 
 export function AddAllToCartButton({ productIds }: { productIds: string[] }) {
   const [pending, startTransition] = useTransition();
@@ -20,7 +21,7 @@ export function AddAllToCartButton({ productIds }: { productIds: string[] }) {
           router.push("/cart");
         })
       }
-      className="rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+      className={`${buttonClass.primary} w-full md:w-auto`}
     >
       {pending ? "Adding…" : `Add all ${productIds.length} to basket`}
     </button>

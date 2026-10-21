@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isCurrentUserAdmin } from "@/lib/data";
+import { isAllowedImageUrl, ALLOWED_IMAGE_HOSTS } from "@/lib/images";
+import { NEW_CATEGORY_VALUE } from "@/lib/categories";
 
 async function requireAdmin() {
   if (!(await isCurrentUserAdmin())) {
@@ -26,8 +28,26 @@ const productSchema = z.object({
   priceDollars: z.coerce.number().positive("Price must be greater than 0"),
   currency: z.string().trim().min(3).max(3).default("gbp"),
   category: z.string().trim().min(1, "Category is required"),
-  imageUrl: z.string().url("Image URL must be a valid URL"),
+  imageUrl: z
+    .string()
+    .trim()
+    .refine(isAllowedImageUrl, {
+      message: `Image links must come from ${ALLOWED_IMAGE_HOSTS.join(" or ")} (starting with https://).`,
+    }),
+  isPrivateLabel: z.boolean(),
   stock: z.coerce.number().int().min(0, "Stock cannot be negative"),
+  size: z.string().trim().max(40).optional(),
+  // Comma-separated in the form, e.g. "Co-op sourced, Unrefined".
+  badges: z
+    .string()
+    .optional()
+    .transform((v) =>
+      (v ?? "")
+        .split(",")
+        .map((b) => b.trim())
+        .filter(Boolean)
+        .slice(0, 4),
+    ),
 });
 
 function slugify(input: string): string {
@@ -39,16 +59,32 @@ function slugify(input: string): string {
 }
 
 function parse(formData: FormData) {
+  const category =
+    formData.get("category") === NEW_CATEGORY_VALUE
+      ? formData.get("newCategory")
+      : formData.get("category");
   return productSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug") || undefined,
     description: formData.get("description"),
     priceDollars: formData.get("priceDollars"),
     currency: (formData.get("currency") as string) || "gbp",
-    category: formData.get("category"),
+    category,
     imageUrl: formData.get("imageUrl"),
+    isPrivateLabel: formData.get("isPrivateLabel") === "on",
     stock: formData.get("stock"),
+    size: (formData.get("size") as string) || undefined,
+    badges: (formData.get("badges") as string) || undefined,
   });
+}
+
+/** Reuse an existing category's spelling so "spices" doesn't become a second tile. */
+async function canonicalCategory(name: string): Promise<string> {
+  const existing = await prisma.product.findFirst({
+    where: { category: { equals: name, mode: "insensitive" } },
+    select: { category: true },
+  });
+  return existing?.category ?? name;
 }
 
 export async function createProduct(
@@ -76,9 +112,12 @@ export async function createProduct(
       description: data.description,
       priceCents: Math.round(data.priceDollars * 100),
       currency: data.currency.toLowerCase(),
-      category: data.category,
+      category: await canonicalCategory(data.category),
       imageUrl: data.imageUrl,
+      isPrivateLabel: data.isPrivateLabel,
       stock: data.stock,
+      size: data.size || null,
+      badges: data.badges,
     },
   });
 
@@ -116,9 +155,12 @@ export async function updateProduct(
       description: data.description,
       priceCents: Math.round(data.priceDollars * 100),
       currency: data.currency.toLowerCase(),
-      category: data.category,
+      category: await canonicalCategory(data.category),
       imageUrl: data.imageUrl,
+      isPrivateLabel: data.isPrivateLabel,
       stock: data.stock,
+      size: data.size || null,
+      badges: data.badges,
     },
   });
 

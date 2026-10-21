@@ -21,7 +21,7 @@ export function DeleteProductButton({
           startTransition(() => deleteProduct(id));
         }
       }}
-      className="text-sm text-stone-500 hover:text-red-600 disabled:opacity-50"
+      className="text-sm text-ink-soft hover:text-danger disabled:opacity-50"
     >
       {pending ? "Deleting…" : "Delete"}
     </button>

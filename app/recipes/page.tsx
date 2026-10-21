@@ -1,9 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getRecipes } from "@/lib/data";
+import { PageTitle, cardClass } from "@/components/ui";
+import { RecipeMeta } from "@/components/RecipeMeta";
 
 export const metadata = {
-  title: "Recipes — Baskt",
+  title: "Recipes",
   description: "Cook authentic Nigerian dishes — tap any ingredient to add it to your basket.",
 };
 
@@ -12,21 +14,18 @@ export default async function RecipesPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Recipes</h1>
-        <p className="mt-1 text-stone-600">
-          Cook the classics. Tap any ingredient to drop it straight into your basket.
-        </p>
-      </div>
+      <PageTitle subtitle="Cook the classics. Tap any ingredient to drop it straight into your basket.">
+        Recipes 🍲
+      </PageTitle>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {recipes.map((recipe) => (
           <Link
             key={recipe.id}
             href={`/recipes/${recipe.slug}`}
-            className="group flex flex-col overflow-hidden rounded-lg border border-stone-200 bg-white"
+            className={`${cardClass} group flex flex-col overflow-hidden`}
           >
-            <div className="relative aspect-[4/3]">
+            <div className="relative aspect-[16/9] bg-brand-pale">
               <Image
                 src={recipe.imageUrl}
                 alt={recipe.title}
@@ -35,21 +34,22 @@ export default async function RecipesPage() {
                 className="object-cover transition group-hover:scale-105"
               />
               {recipe.isPremium && (
-                <span className="absolute right-2 top-2 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950">
-                  Plus
+                <span className="absolute right-3 top-3 rounded-full bg-gold px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink">
+                  ⭐ AfroPlus
                 </span>
               )}
             </div>
             <div className="flex flex-1 flex-col p-4">
-              <h2 className="font-semibold text-stone-900 group-hover:text-emerald-700">
+              <h2 className="font-display text-lg font-bold text-ink group-hover:text-brand">
                 {recipe.title}
               </h2>
-              <p className="mt-1 line-clamp-2 text-sm text-stone-600">
-                {recipe.description}
-              </p>
-              <p className="mt-3 text-xs text-stone-400">
-                {recipe.minutes} min · serves {recipe.servings}
-              </p>
+              <p className="mt-1 line-clamp-2 text-sm text-ink-mid">{recipe.description}</p>
+              <RecipeMeta
+                minutes={recipe.minutes}
+                servings={recipe.servings}
+                difficulty={recipe.difficulty}
+                className="mt-3"
+              />
             </div>
           </Link>
         ))}

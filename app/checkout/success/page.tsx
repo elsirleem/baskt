@@ -2,10 +2,11 @@ import Link from "next/link";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/data";
-import { finalizeOrderPaid } from "@/lib/orders";
+import { finalizeOrderPaid, shippingFromSession } from "@/lib/orders";
 import { formatPrice } from "@/lib/utils";
+import { buttonClass } from "@/components/ui";
 
-export const metadata = { title: "Order confirmed — Baskt" };
+export const metadata = { title: "Order confirmed" };
 
 export default async function CheckoutSuccessPage(props: {
   searchParams: Promise<{ session_id?: string }>;
@@ -27,7 +28,7 @@ export default async function CheckoutSuccessPage(props: {
       if (session.payment_status === "paid" && orderId) {
         const order = await prisma.order.findUnique({ where: { id: orderId } });
         if (order && order.userId === userId) {
-          await finalizeOrderPaid(orderId);
+          await finalizeOrderPaid(orderId, shippingFromSession(session));
           confirmed = true;
           totalCents = order.totalCents;
           currency = order.currency;
@@ -40,24 +41,30 @@ export default async function CheckoutSuccessPage(props: {
 
   return (
     <div className="py-16 text-center">
-      <div className="text-5xl">✅</div>
-      <h1 className="mt-4 text-2xl font-bold">Thank you for your order!</h1>
+      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-brand-pale text-4xl">
+        ✅
+      </div>
+      <h1 className="mt-5 font-display text-2xl font-bold md:text-3xl">
+        Thank you for your order!
+      </h1>
       {confirmed ? (
-        <p className="mt-2 text-stone-600">
-          Your payment of {formatPrice(totalCents, currency)} was successful. A
-          confirmation is on its way.
+        <p className="mx-auto mt-2 max-w-md text-ink-mid">
+          Your payment of {formatPrice(totalCents, currency)} was successful. We&apos;ll get
+          your basket packed and on its way.
         </p>
       ) : (
-        <p className="mt-2 text-stone-600">
-          Your order is being processed. You&apos;ll receive a confirmation shortly.
+        <p className="mx-auto mt-2 max-w-md text-ink-mid">
+          Your order is being processed. You&apos;ll see it in your order history shortly.
         </p>
       )}
-      <Link
-        href="/"
-        className="mt-6 inline-block rounded-md bg-emerald-600 px-5 py-2.5 font-medium text-white hover:bg-emerald-700"
-      >
-        Continue shopping
-      </Link>
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
+        <Link href="/orders" className={buttonClass.outline}>
+          View orders
+        </Link>
+        <Link href="/" className={buttonClass.primary}>
+          Continue shopping
+        </Link>
+      </div>
     </div>
   );
 }

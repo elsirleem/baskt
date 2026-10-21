@@ -1,18 +1,16 @@
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { configuredEnv } from "@/lib/env";
 import type { SubTier } from "@prisma/client";
 
 /** Stripe Price IDs for the recurring membership tiers (set by scripts/setup-stripe.ts). */
 export const TIER_PRICE_ENV: Record<Exclude<SubTier, "PAYG">, string | undefined> = {
-  MONTHLY: process.env.STRIPE_PRICE_MONTHLY,
-  PLUS: process.env.STRIPE_PRICE_PLUS,
+  MONTHLY: configuredEnv(process.env.STRIPE_PRICE_MONTHLY),
+  PLUS: configuredEnv(process.env.STRIPE_PRICE_PLUS),
 };
 
 export function isStripeConfigured(): boolean {
-  return (
-    !!process.env.STRIPE_SECRET_KEY &&
-    !process.env.STRIPE_SECRET_KEY.includes("replace_me")
-  );
+  return configuredEnv(process.env.STRIPE_SECRET_KEY)?.startsWith("sk_") ?? false;
 }
 
 /** Find or create the Stripe customer for a user and persist the id. */
@@ -37,7 +35,7 @@ export async function ensureStripeCustomer(userId: string): Promise<string> {
   return customer.id;
 }
 
-/** Map a Stripe price id back to a Baskt tier. */
+/** Map a Stripe price id back to a membership tier. */
 export function tierForPriceId(priceId: string | null | undefined): SubTier {
   if (priceId && priceId === TIER_PRICE_ENV.PLUS) return "PLUS";
   if (priceId && priceId === TIER_PRICE_ENV.MONTHLY) return "MONTHLY";

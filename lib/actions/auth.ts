@@ -2,11 +2,13 @@
 
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { AuthError } from "next-auth";
+import { AuthError, CredentialsSignin } from "next-auth";
 import { prisma } from "@/lib/prisma";
-import { signIn, signOut } from "@/lib/auth";
+import { RATE_LIMITED_CODE, signIn, signOut } from "@/lib/auth";
 import { ensureReferralCode, resolveReferrer } from "@/lib/referral";
+import { LIMITS, clientIp, rateLimit } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
@@ -32,6 +34,11 @@ export async function registerUser(
 
   const { name, email, password } = parsed.data;
 
+  const limited = await rateLimit(`signup:ip:${clientIp(await headers())}`, LIMITS.signUpPerIp);
+  if (!limited.ok) {
+    return { error: "Too many accounts created from this network. Please try again later." };
+  }
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     return { error: "An account with that email already exists." };
@@ -40,7 +47,7 @@ export async function registerUser(
   // Link the referrer if a valid code was supplied.
   const referredById = await resolveReferrer(formData.get("ref") as string | null);
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
     data: { name, email, passwordHash, referredById },
   });
@@ -66,6 +73,9 @@ export async function loginUser(
   try {
     await signIn("credentials", { email, password, redirectTo: "/" });
   } catch (error) {
+    if (error instanceof CredentialsSignin && error.code === RATE_LIMITED_CODE) {
+      return { error: "Too many sign-in attempts. Please wait 15 minutes and try again." };
+    }
     if (error instanceof AuthError) {
       return { error: "Invalid email or password." };
     }

@@ -16,22 +16,22 @@ export function QuantityControl({
     startTransition(() => updateCartQuantity(productId, q));
 
   return (
-    <div className="inline-flex items-center rounded-md border border-stone-300">
+    <div className="inline-flex items-center gap-2.5 rounded-lg bg-brand-pale px-2.5 py-1">
       <button
         type="button"
         disabled={pending}
         onClick={() => set(quantity - 1)}
-        className="px-3 py-1 text-lg leading-none hover:bg-stone-100 disabled:opacity-50"
-        aria-label="Decrease quantity"
+        className="w-5 text-base font-bold leading-none text-brand disabled:opacity-50"
+        aria-label={quantity <= 1 ? "Remove from basket" : "Decrease quantity"}
       >
         −
       </button>
-      <span className="w-8 text-center text-sm">{quantity}</span>
+      <span className="min-w-4 text-center text-sm font-bold text-ink">{quantity}</span>
       <button
         type="button"
         disabled={pending}
         onClick={() => set(quantity + 1)}
-        className="px-3 py-1 text-lg leading-none hover:bg-stone-100 disabled:opacity-50"
+        className="w-5 text-base font-bold leading-none text-brand disabled:opacity-50"
         aria-label="Increase quantity"
       >
         +
@@ -48,7 +48,7 @@ export function RemoveFromCartButton({ productId }: { productId: string }) {
       type="button"
       disabled={pending}
       onClick={() => startTransition(() => removeFromCart(productId))}
-      className="text-sm text-stone-500 hover:text-red-600 disabled:opacity-50"
+      className="text-xs font-medium text-ink-soft hover:text-danger disabled:opacity-50"
     >
       Remove
     </button>

@@ -1,20 +1,21 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
 import { getCurrentUserId, getOrders } from "@/lib/data";
+import { BackLink, EmptyState, PageTitle, cardClass } from "@/components/ui";
 
-export const metadata = { title: "Your orders — Baskt" };
+export const metadata = { title: "Your orders" };
 
-const STATUS_STYLES: Record<string, string> = {
-  PAID: "bg-emerald-100 text-emerald-800",
-  PENDING: "bg-amber-100 text-amber-800",
-  CANCELLED: "bg-stone-200 text-stone-600",
+const STATUS: Record<string, { label: string; className: string }> = {
+  PAID: { label: "Paid", className: "bg-brand-pale text-brand" },
+  PENDING: { label: "Awaiting payment", className: "bg-gold-light text-gold-dark" },
+  CANCELLED: { label: "Cancelled", className: "bg-line text-ink-soft" },
 };
 
 function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "Europe/London",
   }).format(date);
 }
 
@@ -26,59 +27,84 @@ export default async function OrdersPage() {
 
   if (orders.length === 0) {
     return (
-      <div className="py-16 text-center">
-        <h1 className="text-2xl font-bold">No orders yet</h1>
-        <p className="mt-2 text-stone-600">When you place an order it&apos;ll show up here.</p>
-        <Link
-          href="/"
-          className="mt-6 inline-block rounded-md bg-emerald-600 px-5 py-2.5 font-medium text-white hover:bg-emerald-700"
-        >
-          Browse catalogue
-        </Link>
-      </div>
+      <EmptyState
+        icon="📦"
+        title="No orders yet"
+        text="When you place an order it'll show up here."
+        cta={{ href: "/", label: "Browse the shop" }}
+      />
     );
   }
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold">Your orders</h1>
-      <ul className="space-y-4">
-        {orders.map((order) => (
-          <li key={order.id} className="rounded-lg border border-stone-200 bg-white p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="font-medium">Order #{order.id.slice(-8).toUpperCase()}</p>
-                <p className="text-sm text-stone-500">{formatDate(order.createdAt)}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                    STATUS_STYLES[order.status] ?? "bg-stone-200 text-stone-600"
-                  }`}
-                >
-                  {order.status}
-                </span>
-                <span className="font-semibold">
-                  {formatPrice(order.totalCents, order.currency)}
-                </span>
-              </div>
-            </div>
+    <div className="mx-auto max-w-3xl">
+      <BackLink href="/account" label="Profile" />
+      <PageTitle>Your Orders 📦</PageTitle>
 
-            <ul className="mt-4 divide-y divide-stone-100 border-t border-stone-100">
-              {order.items.map((item) => (
-                <li key={item.id} className="flex justify-between py-2 text-sm">
-                  <span className="text-stone-700">
-                    {item.nameSnapshot}{" "}
-                    <span className="text-stone-400">× {item.quantity}</span>
+      <ul className="space-y-4">
+        {orders.map((order) => {
+          const status = STATUS[order.status] ?? STATUS.CANCELLED;
+          const address = [
+            order.shippingName,
+            order.shippingLine1,
+            order.shippingLine2,
+            order.shippingCity,
+            order.shippingPostcode,
+          ]
+            .filter(Boolean)
+            .join(", ");
+
+          return (
+            <li key={order.id} className={`${cardClass} p-4 md:p-5`}>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-ink">
+                    Order #{order.id.slice(-8).toUpperCase()}
+                  </p>
+                  <p className="text-xs text-ink-soft">{formatDate(order.createdAt)}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${status.className}`}
+                  >
+                    {status.label}
                   </span>
-                  <span className="text-stone-600">
-                    {formatPrice(item.unitPriceCents * item.quantity, order.currency)}
+                  <span className="font-display text-lg font-bold text-brand">
+                    {formatPrice(order.totalCents, order.currency)}
                   </span>
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))}
+                </div>
+              </div>
+
+              <ul className="mt-3 divide-y divide-line border-t border-line">
+                {order.items.map((item) => (
+                  <li key={item.id} className="flex justify-between gap-3 py-2 text-sm">
+                    <span className="text-ink-mid">
+                      {item.nameSnapshot}{" "}
+                      <span className="text-ink-soft">× {item.quantity}</span>
+                    </span>
+                    <span className="shrink-0 text-ink-mid">
+                      {formatPrice(item.unitPriceCents * item.quantity, order.currency)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              {(order.discountCents > 0 || order.creditAppliedCents > 0) && (
+                <p className="mt-2 text-xs font-semibold text-brand">
+                  You saved{" "}
+                  {formatPrice(order.discountCents + order.creditAppliedCents, order.currency)} on
+                  this order
+                </p>
+              )}
+
+              {address && (
+                <p className="mt-3 rounded-xl bg-cream px-3 py-2 text-xs text-ink-mid">
+                  🚚 Delivering to {address}
+                </p>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

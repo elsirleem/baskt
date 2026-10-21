@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { buttonClass, rowClass } from "@/components/ui";
+import { ChevronRightIcon } from "@/components/icons";
 
 async function postForRedirect(url: string, body?: unknown): Promise<string> {
   const res = await fetch(url, {
@@ -27,11 +29,6 @@ export function SubscribeButton({
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const base =
-    variant === "primary"
-      ? "bg-emerald-600 text-white hover:bg-emerald-700"
-      : "border border-emerald-600 text-emerald-700 hover:bg-emerald-50";
-
   return (
     <div>
       <button
@@ -55,39 +52,65 @@ export function SubscribeButton({
             setLoading(false);
           }
         }}
-        className={`w-full rounded-md px-4 py-2.5 text-sm font-medium disabled:opacity-60 ${base}`}
+        className={`${variant === "primary" ? buttonClass.primary : buttonClass.outline} w-full`}
       >
         {loading ? "Redirecting…" : label}
       </button>
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-xs text-danger">{error}</p>}
     </div>
   );
 }
 
-export function ManageBillingButton() {
+/** Opens the Stripe Billing Portal. Renders as a button, or as a Profile menu row. */
+export function ManageBillingButton({
+  label = "Manage subscription",
+  variant = "button",
+  icon,
+}: {
+  label?: string;
+  variant?: "button" | "row";
+  icon?: string;
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const open = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      window.location.href = await postForRedirect("/api/subscription/portal");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+      setLoading(false);
+    }
+  };
+
+  if (variant === "row") {
+    return (
+      <div>
+        <button type="button" disabled={loading} onClick={open} className={rowClass}>
+          <span className="w-7 text-center text-xl" aria-hidden="true">
+            {icon}
+          </span>
+          <span className="flex-1 text-sm text-ink">{loading ? "Opening…" : label}</span>
+          <ChevronRightIcon className="h-4 w-4 text-ink-soft" />
+        </button>
+        {error && <p className="px-4 pb-3 text-xs text-danger">{error}</p>}
+      </div>
+    );
+  }
 
   return (
     <div>
       <button
         type="button"
         disabled={loading}
-        onClick={async () => {
-          setLoading(true);
-          setError(null);
-          try {
-            window.location.href = await postForRedirect("/api/subscription/portal");
-          } catch (e) {
-            setError(e instanceof Error ? e.message : "Something went wrong.");
-            setLoading(false);
-          }
-        }}
-        className="rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 disabled:opacity-60"
+        onClick={open}
+        className={`${buttonClass.outline} w-full`}
       >
-        {loading ? "Opening…" : "Manage subscription"}
+        {loading ? "Opening…" : label}
       </button>
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-xs text-danger">{error}</p>}
     </div>
   );
 }

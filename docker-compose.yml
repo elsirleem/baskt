@@ -20,7 +20,7 @@ services:
   app:
     build:
       context: .
-    container_name: baskt-app
+    container_name: afropantry-app
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -33,6 +33,8 @@ services:
       NEXTAUTH_URL: http://localhost:3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       AUTH_TRUST_HOST: "true"
+      # Load the sample catalogue on first boot (empty database only).
+      SEED_SAMPLE_DATA: "true"
     depends_on:
       db:
         condition: service_healthy
