@@ -58,6 +58,29 @@ For active development, the local workflow below (host `npm run dev` + Dockerise
 Postgres) gives faster hot-reload. The image keeps full dependencies for a reliable
 first run; slimming it with Next `output: "standalone"` is a future optimization.
 
+## Deploy to Vercel
+
+1. In Vercel, **Add New → Project** and import this repository.
+2. **Storage → Create Database → Neon**, region London (eu-west-2), connected to the
+   project. This adds `DATABASE_URL` (pooled, used by the app) and `DATABASE_URL_UNPOOLED`
+   (direct, used for migrations).
+3. Add environment variables for **Production**: `AUTH_SECRET` (a new one, e.g.
+   `openssl rand -base64 32`), `AUTH_TRUST_HOST=true`, the `STRIPE_*` keys and prices,
+   `RESEND_API_KEY`, `EMAIL_FROM`, and `SEED_SAMPLE_DATA=true` if you want the sample
+   catalogue in an empty shop. Don't set `NEXT_PUBLIC_APP_URL` or `NEXTAUTH_URL`: the app
+   uses the Vercel production domain automatically (set `NEXT_PUBLIC_APP_URL` only for a
+   custom domain).
+4. In Stripe, add a webhook endpoint for `https://<your-domain>/api/webhooks/stripe` with
+   the seven events listed under Testing payments, and set its signing secret as
+   `STRIPE_WEBHOOK_SECRET`.
+5. Redeploy. Each production build (`scripts/vercel-build.sh`) generates the Prisma client,
+   applies pending migrations, seeds an empty shop if `SEED_SAMPLE_DATA=true`, then builds.
+   Preview builds of other branches never touch the database.
+
+Functions run in London (`vercel.json`), next to the database and UK customers. Make
+yourself an admin by running `npm run make-admin -- you@example.com` with `DATABASE_URL`
+set to the production database (e.g. after `npx vercel env pull .env.vercel.local`).
+
 ## Local development
 
 ### 1. Start Postgres

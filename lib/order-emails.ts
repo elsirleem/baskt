@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { orderConfirmationEmail, orderShippedEmail } from "@/lib/email-templates";
-
-const appUrl = () => process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+import { appUrl } from "@/lib/env";
 
 /** "Thanks for your order" with items, totals and delivery address. */
 export async function sendOrderConfirmationEmail(orderId: string) {

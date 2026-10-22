@@ -3,6 +3,7 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/data";
 import { isStripeConfigured } from "@/lib/billing";
+import { appUrl } from "@/lib/env";
 
 /** Open the Stripe Billing Portal so members can change or cancel their plan. */
 export async function POST() {
@@ -22,10 +23,9 @@ export async function POST() {
     return NextResponse.json({ error: "No billing account yet." }, { status: 400 });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const session = await stripe.billingPortal.sessions.create({
     customer: user.stripeCustomerId,
-    return_url: `${appUrl}/account`,
+    return_url: `${appUrl()}/account`,
   });
   return NextResponse.json({ url: session.url });
 }

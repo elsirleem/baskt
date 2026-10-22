@@ -8,6 +8,7 @@ import { productLabel } from "@/lib/utils";
 import { describeShortfall, stockShortfalls } from "@/lib/stock";
 import { ensureStripeCustomer, isStripeConfigured } from "@/lib/billing";
 import { LIMITS, rateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { appUrl } from "@/lib/env";
 
 export async function POST() {
   const userId = await getCurrentUserId();
@@ -51,7 +52,6 @@ export async function POST() {
   const currency = items[0]?.product.currency ?? "gbp";
   const creditCents = account.user?.creditCents ?? 0;
   const totals = computeTotals({ subtotalCents, tier: account.tier, creditCents });
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   // Create a pending order with a full snapshot of pricing at purchase time.
   const order = await prisma.order.create({
@@ -139,8 +139,8 @@ export async function POST() {
       // Stripe's minimum; a short window means fewer abandoned sessions holding
       // a basket whose stock may sell out in the meantime.
       expires_at: expiresAt,
-      success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/cart`,
+      success_url: `${appUrl()}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl()}/cart`,
       client_reference_id: order.id,
       metadata: {
         orderId: order.id,
