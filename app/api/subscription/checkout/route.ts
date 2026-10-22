@@ -3,6 +3,7 @@ import { stripe } from "@/lib/stripe";
 import { getCurrentUserId } from "@/lib/data";
 import { ensureStripeCustomer, isStripeConfigured, TIER_PRICE_ENV } from "@/lib/billing";
 import { LIMITS, rateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { appUrl } from "@/lib/env";
 
 export async function POST(request: Request) {
   const userId = await getCurrentUserId();
@@ -40,7 +41,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   try {
     const customerId = await ensureStripeCustomer(userId);
@@ -52,8 +52,8 @@ export async function POST(request: Request) {
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: { metadata: { kind: "membership", tier } },
-      success_url: `${appUrl}/account?subscribed=1`,
-      cancel_url: `${appUrl}/membership`,
+      success_url: `${appUrl()}/account?subscribed=1`,
+      cancel_url: `${appUrl()}/membership`,
       metadata: { userId, tier },
     });
     return NextResponse.json({ url: session.url });

@@ -5,6 +5,7 @@ import { ensureStripeCustomer, isStripeConfigured } from "@/lib/billing";
 import { FRESH_PRICE_ENV } from "@/lib/freshbox";
 import type { FreshBoxSize } from "@prisma/client";
 import { LIMITS, rateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { appUrl } from "@/lib/env";
 
 export async function POST(request: Request) {
   const userId = await getCurrentUserId();
@@ -47,7 +48,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   try {
     const customerId = await ensureStripeCustomer(userId);
@@ -62,8 +62,8 @@ export async function POST(request: Request) {
       subscription_data: {
         metadata: { kind: "fresh", size, weekday: String(deliveryWeekday) },
       },
-      success_url: `${appUrl}/account?fresh=1`,
-      cancel_url: `${appUrl}/fresh`,
+      success_url: `${appUrl()}/account?fresh=1`,
+      cancel_url: `${appUrl()}/fresh`,
       metadata: { userId, kind: "fresh", size, weekday: String(deliveryWeekday) },
     });
     return NextResponse.json({ url: session.url });

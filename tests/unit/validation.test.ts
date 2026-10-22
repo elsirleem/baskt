@@ -1,6 +1,6 @@
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test } from "vitest";
 import type Stripe from "stripe";
-import { configuredEnv } from "@/lib/env";
+import { appUrl, configuredEnv } from "@/lib/env";
 import { isAllowedImageUrl } from "@/lib/images";
 import { clientIp } from "@/lib/rate-limit";
 import { shippingFromSession } from "@/lib/orders";
@@ -79,5 +79,30 @@ describe("shippingFromSession", () => {
 
   test("returns nothing when no address was collected", () => {
     expect(shippingFromSession(session({ collected_information: null }))).toBeUndefined();
+  });
+});
+
+describe("appUrl", () => {
+  const saved = { ...process.env };
+  afterEach(() => {
+    process.env = { ...saved };
+  });
+
+  test("uses NEXT_PUBLIC_APP_URL first, without a trailing slash", () => {
+    process.env.NEXT_PUBLIC_APP_URL = "https://afropantry.co.uk/";
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "baskt.vercel.app";
+    expect(appUrl()).toBe("https://afropantry.co.uk");
+  });
+
+  test("falls back to the Vercel production domain", () => {
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "baskt.vercel.app";
+    expect(appUrl()).toBe("https://baskt.vercel.app");
+  });
+
+  test("falls back to localhost", () => {
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    expect(appUrl()).toBe("http://localhost:3000");
   });
 });

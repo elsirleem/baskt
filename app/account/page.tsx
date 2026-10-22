@@ -15,6 +15,7 @@ import { ManageBillingButton } from "@/components/BillingButtons";
 import { ReferralShareRow } from "@/components/ReferralCard";
 import { ChevronRightIcon } from "@/components/icons";
 import { listClass, rowClass } from "@/components/ui";
+import { appUrl } from "@/lib/env";
 
 export const metadata = { title: "Your profile" };
 
@@ -86,8 +87,7 @@ export default async function AccountPage(props: {
   const { user, tier } = account;
   const freshActive = freshBox && freshBox.status !== "canceled";
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const referralLink = `${appUrl}/register?ref=${code}`;
+  const referralLink = `${appUrl()}/register?ref=${code}`;
   const displayName = user?.name || user?.email || "";
   const renews =
     tier !== "PAYG" && account.subscription?.currentPeriodEnd

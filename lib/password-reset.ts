@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { passwordResetEmail } from "@/lib/email-templates";
+import { appUrl } from "@/lib/env";
 
 const RESET_LINK_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -37,11 +38,10 @@ export async function startPasswordReset(email: string): Promise<void> {
   if (!user) return;
 
   const token = await createPasswordResetToken(user.id);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   await sendEmail({
     to: user.email,
     kind: "password_reset",
-    ...passwordResetEmail({ name: user.name, link: `${appUrl}/reset-password?token=${token}` }),
+    ...passwordResetEmail({ name: user.name, link: `${appUrl()}/reset-password?token=${token}` }),
   });
 }
 
