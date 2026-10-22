@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/data";
+import { auth } from "@/lib/auth";
 import { LIMITS, rateLimit } from "@/lib/rate-limit";
 
 export type SettingsState = { error?: string; success?: string } | undefined;
@@ -72,6 +73,15 @@ export async function changePassword(
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.next, 12);
-  await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
-  return { success: "Password changed." };
+  // Ends every other sign-in on the account; this one is kept.
+  const session = await auth();
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      passwordHash,
+      passwordChangedAt: new Date(),
+      passwordChangedBySession: session?.sid ?? null,
+    },
+  });
+  return { success: "Password changed. Any other devices have been signed out." };
 }

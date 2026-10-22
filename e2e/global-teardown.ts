@@ -2,7 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-/** Deletes everything the browser tests created: e2e+… accounts, E2E products, counters. */
+/** Deletes everything the browser tests created: e2e+… accounts, E2E products, counters, email log rows. */
 export default async function globalTeardown() {
   const db = new PrismaClient({
     adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -29,6 +29,7 @@ export default async function globalTeardown() {
       },
     });
     await db.user.deleteMany({ where: { id: { in: ids } } });
+    await db.emailLog.deleteMany({ where: { to: { startsWith: "e2e+", endsWith: "@example.com" } } });
     await db.product.deleteMany({ where: { slug: { startsWith: "e2e-" } } });
   } finally {
     await db.$disconnect();

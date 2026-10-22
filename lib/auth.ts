@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
@@ -53,14 +54,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
-      if (user) token.id = user.id;
-      return token;
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.sid = randomUUID(); // identifies this sign-in
+        return token;
+      }
+      // A password change or reset ends every sign-in that started before it
+      // (returning null signs the browser out), except the sign-in that changed it
+      // in Settings. Deleting the account ends them too.
+      const account = await prisma.user.findUnique({
+        where: { id: token.id as string },
+        select: { passwordChangedAt: true, passwordChangedBySession: true },
+      });
+      if (!account) return null;
+      const changedAt = account.passwordChangedAt
+        ? Math.floor(account.passwordChangedAt.getTime() / 1000)
+        : 0;
+      const startedBefore = (token.iat ?? 0) < changedAt;
+      return startedBefore && token.sid !== account.passwordChangedBySession ? null : token;
     },
     session({ session, token }) {
       if (token.id && session.user) {
         session.user.id = token.id as string;
       }
+      session.sid = token.sid as string | undefined;
       return session;
     },
   },

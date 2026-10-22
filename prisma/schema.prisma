@@ -37,11 +37,17 @@ model User {
   referralRewarded Boolean  @default(false)
   creditCents      Int      @default(0)
 
+  // Sign-ins that started before this are ended (see the jwt callback in lib/auth.ts),
+  // except the one that made the change in Settings.
+  passwordChangedAt        DateTime?
+  passwordChangedBySession String?
+
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
   orders        Order[]
   subscription  Subscription?
   freshBox      FreshBoxSubscription?
+  passwordResetTokens PasswordResetToken[]
 
   @@index([referredById]) // referral counts on the profile
 }
@@ -167,6 +173,7 @@ model Order {
   createdAt          DateTime    @default(now())
   user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items              OrderItem[]
+  emails             EmailLog[]
 
   @@index([userId, createdAt]) // order history, newest first
   @@index([status, fulfilment, createdAt]) // admin order lists
@@ -223,4 +230,35 @@ model RateLimit {
   resetAt DateTime
 
   @@index([resetAt]) // clearing out expired windows
+}
+
+/// One-time password reset links. Only a SHA-256 hash of the emailed token is
+/// stored, so the database alone can't be used to reset anyone's password.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Every email the shop tried to send, and what happened. Never stores the body.
+model EmailLog {
+  id         String   @id @default(cuid())
+  to         String
+  kind       String // order_confirmation | order_shipped | password_reset
+  subject    String
+  status     String // sent | failed | skipped
+  providerId String? // Resend's email id
+  error      String?
+  orderId    String?
+  createdAt  DateTime @default(now())
+  order      Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([createdAt])
 }

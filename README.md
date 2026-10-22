@@ -20,7 +20,8 @@ get a top menu.
 | --- | --- |
 | Catalogue: 28 African SKUs (7 AfroPantry private-label), pack sizes, badges, search, category tiles | `app/page.tsx`, `lib/data.ts` |
 | Product pages: quantity picker, "Use in these recipes" links | `app/product/[slug]/page.tsx` |
-| Accounts: register / sign in / sign out, settings (name, password) | `app/login`, `app/register`, `app/account/settings`, `lib/auth.ts` |
+| Accounts: register / sign in / sign out, settings (name, password), forgot password | `app/login`, `app/register`, `app/account/settings`, `app/forgot-password`, `lib/auth.ts` |
+| **Emails** (Resend): order confirmation, "on its way" with tracking, password reset | `lib/email.ts`, `lib/email-templates.ts`, `lib/order-emails.ts` |
 | Basket: add / update qty / remove, GBP, member pricing, free-delivery progress bar | `app/cart`, `lib/actions/cart.ts` |
 | Wishlist | `app/wishlist`, `lib/actions/wishlist.ts` |
 | **Membership tiers** (Pay As You Go / AfroBasic £4.99-mo / AfroPlus £39.99-yr) via Stripe Billing | `app/membership`, `lib/billing.ts`, `lib/subscription.ts` |
@@ -83,6 +84,17 @@ STRIPE_PRICE_FRESH_LARGE="price_..."
 
 Values left as the `...` placeholders from `.env.example` are treated as unset, so the
 app shows a clear "Stripe is not configured" message instead of calling Stripe.
+
+For emails, add a [Resend](https://resend.com) API key ("Sending access" is enough):
+
+```env
+RESEND_API_KEY="re_..."
+EMAIL_FROM="AfroPantry <onboarding@resend.dev>"
+```
+
+Without a key, emails are logged to the terminal instead of sent. Until you verify your own
+domain in Resend, `onboarding@resend.dev` can only email the address you signed up to
+Resend with.
 
 Also generate a real auth secret with `npx auth secret` → `AUTH_SECRET`.
 
@@ -157,6 +169,31 @@ npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prism
   `X-Powered-By`. The CSP allows inline scripts (no nonces) so pages can still be
   cached; switch to nonces (see the Next.js CSP guide) if you need a stricter policy.
 - **Passwords** are hashed with bcrypt at cost 12 (older cost-10 hashes keep working).
+- **Forgot password** emails a one-time link that expires in an hour; only a SHA-256 hash of
+  it is stored, asking again cancels the previous link, and the page answers the same way
+  whether or not an account exists (the email is sent after the response, so timing
+  doesn't give it away either). Limited to 3 emails per address and 10 per network an hour.
+- **Changing or resetting a password signs out other devices.** Each sign-in has a random
+  id; anything signed in before the change is ended on its next request, except the
+  sign-in that changed it in Settings. A reset from an email ends them all.
+
+## Emails
+
+Sent through [Resend](https://resend.com) (`lib/email.ts`), with plain HTML and text
+versions (`lib/email-templates.ts`):
+
+- **Order confirmation** when an order is paid: items, totals, delivery address. Sent once,
+  by whichever of the webhook or success page marks the order paid, with an idempotency key
+  so a retry can't send it twice.
+- **On its way** when an admin marks an order shipped, with the carrier and tracking number.
+- **Password reset** (see Security).
+
+Every attempt is recorded in the `EmailLog` table (never the body), and each order's emails
+show on its admin page as Sent, Failed or Not sent. Sending never throws, so a mail problem
+can't break checkout or an admin action. Addresses on reserved test domains (`example.com`,
+`.test`, `.invalid`, `localhost`) are never emailed, which keeps test accounts out of your
+Resend quota. Before launch, [verify your domain](https://resend.com/domains) and set
+`EMAIL_FROM` to an address on it, e.g. `AfroPantry <orders@afropantry.co.uk>`.
 - **Docker** runs the app as the unprivileged `node` user.
 
 ## How the money works
@@ -283,9 +320,8 @@ once, or "Manage subscription" fails.
   The original plan envisions a React Native app; the backend here (data model, Stripe,
   auth) is API-shaped and reusable if a native client is built later.
 - **Not built yet** (shown in the design prototype, left out until they exist): notification
-  bell, links to carriers' live tracking pages, emails when an order ships, saved delivery
-  addresses in the profile, restock reminders, and changing the Fresh Box delivery day
-  after signup.
+  bell, links to carriers' live tracking pages, saved delivery addresses in the profile,
+  restock reminders, and changing the Fresh Box delivery day after signup.
 - **Deferred from the plan:** fresh-box fulfilment scheduling, AI restock recommendations,
   and WhatsApp social commerce.
 - **Prisma 7** keeps the connection in `prisma.config.ts` (not the schema) and uses a pg
