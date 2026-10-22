@@ -8,6 +8,9 @@ export const LIMITS = {
   signUpPerIp: { limit: 5, windowSeconds: 60 * 60 },
   passwordChangePerUser: { limit: 5, windowSeconds: 15 * 60 },
   checkoutPerUser: { limit: 10, windowSeconds: 10 * 60 },
+  resetEmailPerAddress: { limit: 3, windowSeconds: 60 * 60 },
+  resetEmailPerIp: { limit: 10, windowSeconds: 60 * 60 },
+  resetSubmitPerIp: { limit: 10, windowSeconds: 15 * 60 },
 } satisfies Record<string, Rule>;
 
 export type RateLimitResult = { ok: boolean; retryAfterSeconds: number };

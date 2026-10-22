@@ -133,6 +133,7 @@ export async function getAdminOrder(id: string) {
     include: {
       user: { select: { name: true, email: true } },
       items: { include: { product: { select: { slug: true, stock: true } } } },
+      emails: { orderBy: { createdAt: "asc" } },
     },
   });
 }

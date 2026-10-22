@@ -11,10 +11,13 @@ export function AuthForm({
   mode,
   action,
   refCode,
+  notice,
 }: {
   mode: "login" | "register";
   action: Action;
   refCode?: string;
+  /** A short success message above the form, e.g. after a password reset. */
+  notice?: string;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     action,
@@ -34,6 +37,12 @@ export function AuthForm({
             ? "Join AfroPantry for African essentials delivered across the UK."
             : "Sign in to your AfroPantry account."}
         </p>
+
+        {notice && (
+          <p role="status" className="mt-4 rounded-xl bg-brand-pale px-3 py-2 text-sm text-brand">
+            {notice}
+          </p>
+        )}
 
         {isRegister && refCode && (
           <p className="mt-4 rounded-xl bg-gold-light px-3 py-2 text-sm text-gold-dark">
@@ -86,7 +95,16 @@ export function AuthForm({
               autoComplete={isRegister ? "new-password" : "current-password"}
               className={inputClass}
             />
-            {isRegister && <p className="mt-1 text-xs text-ink-soft">At least 8 characters.</p>}
+            {isRegister ? (
+              <p className="mt-1 text-xs text-ink-soft">At least 8 characters.</p>
+            ) : (
+              <Link
+                href="/forgot-password"
+                className="mt-1.5 inline-block text-xs font-semibold text-brand hover:underline"
+              >
+                Forgot your password?
+              </Link>
+            )}
           </div>
 
           {state?.error && (

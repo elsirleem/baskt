@@ -3,12 +3,14 @@
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { AuthError, CredentialsSignin } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { RATE_LIMITED_CODE, signIn, signOut } from "@/lib/auth";
 import { ensureReferralCode, resolveReferrer } from "@/lib/referral";
 import { LIMITS, clientIp, rateLimit } from "@/lib/rate-limit";
+import { completePasswordReset, startPasswordReset } from "@/lib/password-reset";
 
 const registerSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
@@ -90,4 +92,66 @@ export async function loginUser(
 export async function logoutUser() {
   await signOut({ redirectTo: "/" });
   redirect("/");
+}
+
+export type ResetRequestState = { error?: string; sent?: boolean } | undefined;
+
+const emailSchema = z.string().trim().toLowerCase().email("Enter a valid email");
+
+/**
+ * "Forgot password": always answers the same way, straight away, whether or not
+ * the email has an account. The email itself is sent after the response, so the
+ * timing doesn't give it away either.
+ */
+export async function requestPasswordReset(
+  _prev: ResetRequestState,
+  formData: FormData,
+): Promise<ResetRequestState> {
+  const parsed = emailSchema.safeParse(formData.get("email"));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Enter a valid email" };
+  }
+  const email = parsed.data;
+
+  const byIp = await rateLimit(`reset:ip:${clientIp(await headers())}`, LIMITS.resetEmailPerIp);
+  if (!byIp.ok) return { error: "Too many requests. Please try again later." };
+
+  // Over the per-address limit: same answer, but no more emails to that inbox.
+  const byAddress = await rateLimit(`reset:email:${email}`, LIMITS.resetEmailPerAddress);
+  if (byAddress.ok) after(() => startPasswordReset(email));
+
+  return { sent: true };
+}
+
+export type ResetPasswordState = { error?: string } | undefined;
+
+const resetSchema = z
+  .object({
+    token: z.string().min(1, "This reset link is incomplete."),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirm: z.string(),
+  })
+  .refine((v) => v.password === v.confirm, { message: "Passwords don't match" });
+
+/** Sets a new password from a reset link, then sends you to sign in with it. */
+export async function resetPassword(
+  _prev: ResetPasswordState,
+  formData: FormData,
+): Promise<ResetPasswordState> {
+  const parsed = resetSchema.safeParse({
+    token: formData.get("token"),
+    password: formData.get("password"),
+    confirm: formData.get("confirm"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const limited = await rateLimit(`reset-submit:ip:${clientIp(await headers())}`, LIMITS.resetSubmitPerIp);
+  if (!limited.ok) return { error: "Too many attempts. Please wait 15 minutes and try again." };
+
+  if (!(await completePasswordReset(parsed.data.token, parsed.data.password))) {
+    return { error: "This reset link has expired or has already been used. Ask for a new one." };
+  }
+  redirect("/login?reset=1");
 }

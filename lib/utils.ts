@@ -16,6 +16,11 @@ export function formatWholePrice(cents: number, currency = "gbp"): string {
   }).format(Math.floor(cents / 100));
 }
 
+/** Short customer-facing order number, e.g. "#AQMIYVQN" without the "#". */
+export function orderNumber(orderId: string): string {
+  return orderId.slice(-8).toUpperCase();
+}
+
 /** Product name with its pack size, e.g. "White Garri (1kg)", for receipts and Stripe. */
 export function productLabel(product: { name: string; size: string | null }): string {
   return product.size ? `${product.name} (${product.size})` : product.name;

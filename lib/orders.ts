@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
+import { sendOrderConfirmationEmail } from "@/lib/order-emails";
 
 export const REFERRAL_REWARD_CENTS = 500; // £5 each way
 
@@ -34,15 +35,16 @@ export function shippingFromSession(
 
 /**
  * Finalize a paid order exactly once: mark PAID, save the delivery address, take
- * the items out of stock, clear the basket, deduct any account credit used, and
- * grant referral rewards on the buyer's first paid order. Idempotent — safe to
- * call from both the webhook and the success page, even at the same moment.
+ * the items out of stock, clear the basket, deduct any account credit used, grant
+ * referral rewards on the buyer's first paid order, and email a confirmation.
+ * Idempotent — safe to call from both the webhook and the success page, even at
+ * the same moment.
  */
 export async function finalizeOrderPaid(
   orderId: string,
   shipping?: ShippingDetails,
 ): Promise<void> {
-  await prisma.$transaction(async (tx) => {
+  const claimed = await prisma.$transaction(async (tx) => {
     // Claim the order atomically: only one caller can flip it to PAID, so a racing
     // webhook and success page can't both apply credit and rewards. A cancelled
     // order is revived too: if Stripe says the money arrived, the order stands.
@@ -50,7 +52,7 @@ export async function finalizeOrderPaid(
       where: { id: orderId, status: { in: ["PENDING", "AWAITING_PAYMENT", "CANCELLED"] } },
       data: { status: "PAID", paidAt: new Date(), ...shipping },
     });
-    if (claimed.count === 0) return;
+    if (claimed.count === 0) return false;
 
     const order = await tx.order.findUniqueOrThrow({
       where: { id: orderId },
@@ -94,7 +96,11 @@ export async function finalizeOrderPaid(
         data: { creditCents: { increment: REFERRAL_REWARD_CENTS } },
       });
     }
+    return true;
   });
+
+  // Only the caller that marked it paid sends the confirmation (after commit).
+  if (claimed) await sendOrderConfirmationEmail(orderId);
 }
 
 /**

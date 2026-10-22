@@ -8,6 +8,7 @@ import { isCurrentUserAdmin } from "@/lib/data";
 import { isAllowedImageUrl, ALLOWED_IMAGE_HOSTS } from "@/lib/images";
 import { NEW_CATEGORY_VALUE } from "@/lib/categories";
 import { CARRIERS, FULFILMENT_STEPS, canMoveTo, stepIndex } from "@/lib/fulfilment";
+import { sendOrderShippedEmail } from "@/lib/order-emails";
 
 async function requireAdmin() {
   if (!(await isCurrentUserAdmin())) {
@@ -256,6 +257,8 @@ export async function updateFulfilment(
   if (updated.count === 0) {
     return { error: "Someone else just updated this order. Reload to see the latest." };
   }
+
+  if (next === "SHIPPED") await sendOrderShippedEmail(orderId);
 
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${orderId}`);

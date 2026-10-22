@@ -15,6 +15,11 @@ const UNPAID_LABEL: Record<string, string> = {
   CANCELLED: "Cancelled",
 };
 
+const EMAIL_LABEL: Record<string, string> = {
+  order_confirmation: "Order confirmation",
+  order_shipped: "Shipped",
+};
+
 const placed = new Intl.DateTimeFormat("en-GB", {
   dateStyle: "medium",
   timeStyle: "short",
@@ -153,6 +158,35 @@ export default async function AdminOrderPage(props: { params: Promise<{ id: stri
             )}
             {order.shippingPhone && (
               <p className="mt-2 text-sm text-ink-mid">📞 {order.shippingPhone}</p>
+            )}
+          </Card>
+
+          <Card title="Emails">
+            {order.emails.length === 0 ? (
+              <p className="text-sm text-ink-soft">None sent yet.</p>
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {order.emails.map((email) => (
+                  <li key={email.id} className="flex items-start justify-between gap-3">
+                    <span className="text-ink-mid">
+                      {EMAIL_LABEL[email.kind] ?? email.kind}
+                      <span className="block text-xs text-ink-soft">{placed.format(email.createdAt)}</span>
+                    </span>
+                    <span
+                      title={email.error ?? undefined}
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        email.status === "sent"
+                          ? "bg-brand-pale text-brand"
+                          : email.status === "failed"
+                            ? "bg-red-50 text-danger"
+                            : "bg-line text-ink-soft"
+                      }`}
+                    >
+                      {email.status === "sent" ? "Sent" : email.status === "failed" ? "Failed" : "Not sent"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
           </Card>
 
