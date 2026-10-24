@@ -10,7 +10,7 @@ const CONTENT_TYPES: Record<string, string> = {
 };
 
 /** Serves product photos uploaded without Blob storage (see lib/product-images.ts). */
-export async function GET(_request: Request, ctx: RouteContext<"/uploads/[file]">) {
+export async function GET(_request: Request, ctx: { params: Promise<{ file: string }> }) {
   const { file } = await ctx.params;
   // Only names the upload code creates, so nothing outside the folder can be read.
   if (!LOCAL_UPLOAD_PATH.test(`/uploads/${file}`)) return new Response("Not found", { status: 404 });
