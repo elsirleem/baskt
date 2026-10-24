@@ -22,8 +22,14 @@ export function sniffImageType(bytes: Uint8Array): ImageType | null {
   return null;
 }
 
-/** Without Blob storage, uploads are saved here and served by app/uploads/[file]. */
-export const LOCAL_UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads");
+/**
+ * Without Blob storage, uploads are saved here and served by app/uploads/[file].
+ * The turbopackIgnore comments (here and on every path built from it) stop the
+ * build treating this as a reference to the whole project folder and copying all
+ * of it into the server bundle; Next.js marks its own cache paths the same way.
+ */
+export const LOCAL_UPLOAD_DIR =
+  process.env.UPLOAD_DIR || path.join(/* turbopackIgnore: true */ process.cwd(), "uploads");
 
 /** Vercel adds these when a Blob store is connected to the project. */
 function blobConfigured(): boolean {
@@ -63,7 +69,8 @@ export async function storeProductImage(file: File): Promise<StoredImage> {
     };
   }
 
-  await mkdir(LOCAL_UPLOAD_DIR, { recursive: true });
-  await writeFile(path.join(LOCAL_UPLOAD_DIR, name), bytes);
+  const filePath = path.join(/* turbopackIgnore: true */ LOCAL_UPLOAD_DIR, name);
+  await mkdir(/* turbopackIgnore: true */ LOCAL_UPLOAD_DIR, { recursive: true });
+  await writeFile(/* turbopackIgnore: true */ filePath, bytes);
   return { url: `/uploads/${name}` };
 }

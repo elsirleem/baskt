@@ -16,7 +16,9 @@ export async function GET(_request: Request, ctx: RouteContext<"/uploads/[file]"
   if (!LOCAL_UPLOAD_PATH.test(`/uploads/${file}`)) return new Response("Not found", { status: 404 });
 
   try {
-    const bytes = await readFile(path.join(LOCAL_UPLOAD_DIR, file));
+    // See LOCAL_UPLOAD_DIR for the turbopackIgnore comments.
+    const filePath = path.join(/* turbopackIgnore: true */ LOCAL_UPLOAD_DIR, file);
+    const bytes = await readFile(/* turbopackIgnore: true */ filePath);
     return new Response(bytes, {
       headers: {
         "Content-Type": CONTENT_TYPES[file.split(".").pop()!],
