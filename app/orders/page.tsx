@@ -7,13 +7,6 @@ import { FULFILMENT_STEPS, stepIndex } from "@/lib/fulfilment";
 
 export const metadata = { title: "Your orders" };
 
-const STATUS: Record<string, { label: string; className: string }> = {
-  PAID: { label: "Paid", className: "bg-brand-pale text-brand" },
-  PENDING: { label: "Awaiting payment", className: "bg-gold-light text-gold-dark" },
-  AWAITING_PAYMENT: { label: "Payment processing", className: "bg-gold-light text-gold-dark" },
-  CANCELLED: { label: "Cancelled", className: "bg-line text-ink-soft" },
-};
-
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
@@ -46,13 +39,6 @@ export default async function OrdersPage() {
 
       <ul className="space-y-4">
         {orders.map((order) => {
-          const status =
-            order.status === "PAID"
-              ? {
-                  label: FULFILMENT_STEPS[stepIndex(order.fulfilment)].customerLabel,
-                  className: STATUS.PAID.className,
-                }
-              : (STATUS[order.status] ?? STATUS.CANCELLED);
           const address = [
             order.shippingName,
             order.shippingLine1,
@@ -73,10 +59,8 @@ export default async function OrdersPage() {
                   <p className="text-xs text-ink-soft">{formatDate(order.createdAt)}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${status.className}`}
-                  >
-                    {status.label}
+                  <span className="rounded-full bg-brand-pale px-2.5 py-0.5 text-xs font-semibold text-brand">
+                    {FULFILMENT_STEPS[stepIndex(order.fulfilment)].customerLabel}
                   </span>
                   <span className="font-display text-lg font-bold text-brand">
                     {formatPrice(order.totalCents, order.currency)}
@@ -84,23 +68,21 @@ export default async function OrdersPage() {
                 </div>
               </div>
 
-              {order.status === "PAID" && (
-                <div className="mt-4">
-                  <OrderTracker status={order.fulfilment} times={trackerTimes(order)} />
-                  {order.carrier && (
-                    <p className="mt-3 text-xs text-ink-mid">
-                      Sent with {order.carrier}
-                      {order.trackingNumber && (
-                        <>
-                          {" "}
-                          · Tracking number{" "}
-                          <span className="font-mono font-semibold">{order.trackingNumber}</span>
-                        </>
-                      )}
-                    </p>
-                  )}
-                </div>
-              )}
+              <div className="mt-4">
+                <OrderTracker status={order.fulfilment} times={trackerTimes(order)} />
+                {order.carrier && (
+                  <p className="mt-3 text-xs text-ink-mid">
+                    Sent with {order.carrier}
+                    {order.trackingNumber && (
+                      <>
+                        {" "}
+                        · Tracking number{" "}
+                        <span className="font-mono font-semibold">{order.trackingNumber}</span>
+                      </>
+                    )}
+                  </p>
+                )}
+              </div>
 
               <ul className="mt-3 divide-y divide-line border-t border-line">
                 {order.items.map((item) => (

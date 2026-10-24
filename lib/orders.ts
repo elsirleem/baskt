@@ -130,16 +130,15 @@ const ABANDONED_AFTER_MS = 60 * 60 * 1000;
 
 /**
  * Backup for a missed "checkout expired" notification: cancels orders still
- * PENDING an hour after checkout started. Runs when order lists are viewed (there's
- * no job scheduler yet). If Stripe later confirms a payment anyway, finalizeOrderPaid
- * revives the order.
+ * PENDING an hour after checkout started. Runs when admins view order lists
+ * (there's no job scheduler yet). If Stripe later confirms a payment anyway,
+ * finalizeOrderPaid revives the order.
  */
-export async function cancelAbandonedOrders(userId?: string): Promise<void> {
+export async function cancelAbandonedOrders(): Promise<void> {
   await prisma.order.updateMany({
     where: {
       status: "PENDING",
       createdAt: { lt: new Date(Date.now() - ABANDONED_AFTER_MS) },
-      ...(userId && { userId }),
     },
     data: { status: "CANCELLED" },
   });

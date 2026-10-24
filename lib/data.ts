@@ -205,10 +205,13 @@ export async function getRecipeBySlug(slug: string) {
   });
 }
 
+/**
+ * The customer's orders. Only paid ones count: a checkout that was abandoned or
+ * is still waiting on the bank isn't an order yet, so it stays out of history.
+ */
 export async function getOrders(userId: string) {
-  await cancelAbandonedOrders(userId);
   return prisma.order.findMany({
-    where: { userId },
+    where: { userId, status: "PAID" },
     include: { items: true },
     orderBy: { createdAt: "desc" },
   });

@@ -84,7 +84,6 @@ export default async function CartPage() {
 
   const freshActive = freshBox && freshBox.status !== "canceled";
   const freshFromCents = Math.min(...Object.values(FRESH_BOX_SIZES).map((s) => s.priceCents));
-  const testMode = process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_");
 
   return (
     <div>
@@ -260,8 +259,7 @@ export default async function CartPage() {
             />
           </div>
           <p className="mt-3 text-center text-xs text-ink-soft">
-            Secure checkout by Stripe — you&apos;ll add your UK delivery address there.
-            {testMode && " Test card: 4242 4242 4242 4242."}
+            Secure checkout by Stripe.
           </p>
         </aside>
       </div>
