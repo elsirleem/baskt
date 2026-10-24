@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "vitest";
 import type Stripe from "stripe";
 import { appUrl, configuredEnv, emailConfirmationRequired } from "@/lib/env";
-import { isAllowedImageUrl } from "@/lib/images";
+import { isAllowedImageUrl, publicImageUrl } from "@/lib/images";
 import { clientIp } from "@/lib/rate-limit";
 import { shippingFromSession } from "@/lib/orders";
 
@@ -16,17 +16,44 @@ describe("configuredEnv treats .env.example placeholders as unset", () => {
 });
 
 describe("isAllowedImageUrl", () => {
-  test("accepts https links on images.unsplash.com", () => {
-    expect(isAllowedImageUrl("https://images.unsplash.com/photo-1?w=600")).toBe(true);
+  test.each([
+    "https://images.unsplash.com/photo-1?w=600",
+    "https://abc123.public.blob.vercel-storage.com/products/0123456789abcdef01234567.jpg",
+    "/uploads/0123456789abcdef01234567.webp",
+  ])("accepts %s", (url) => {
+    expect(isAllowedImageUrl(url)).toBe(true);
   });
 
   test.each([
     "http://images.unsplash.com/photo-1",
     "https://example.com/photo.jpg",
     "https://images.unsplash.com.evil.example/photo.jpg",
+    "https://public.blob.vercel-storage.com/x.jpg",
+    "https://abc.public.blob.vercel-storage.com.evil.example/x.jpg",
+    "/uploads/../.env",
+    "/uploads/0123456789abcdef01234567.svg",
+    "//evil.example/uploads/0123456789abcdef01234567.jpg",
     "not a url",
   ])("rejects %s", (url) => {
     expect(isAllowedImageUrl(url)).toBe(false);
+  });
+});
+
+describe("publicImageUrl (photos shown on Stripe's checkout page)", () => {
+  test("keeps https links", () => {
+    expect(publicImageUrl("https://images.unsplash.com/p", "http://localhost:3000")).toBe(
+      "https://images.unsplash.com/p",
+    );
+  });
+
+  test("makes uploaded photos absolute on the live site", () => {
+    expect(publicImageUrl("/uploads/a.jpg", "https://afropantry.co.uk")).toBe(
+      "https://afropantry.co.uk/uploads/a.jpg",
+    );
+  });
+
+  test("leaves out photos Stripe can't reach", () => {
+    expect(publicImageUrl("/uploads/a.jpg", "http://localhost:3000")).toBeUndefined();
   });
 });
 

@@ -74,7 +74,9 @@ first run; slimming it with Next `output: "standalone"` is a future optimization
 4. In Stripe, add a webhook endpoint for `https://<your-domain>/api/webhooks/stripe` with
    the seven events listed under Testing payments, and set its signing secret as
    `STRIPE_WEBHOOK_SECRET`.
-5. Redeploy. Each production build (`scripts/vercel-build.sh`) generates the Prisma client,
+5. For product photo uploads, **Storage → Create → Blob** with **public** access, connected
+   to the project (this adds `BLOB_READ_WRITE_TOKEN`).
+6. Redeploy. Each production build (`scripts/vercel-build.sh`) generates the Prisma client,
    applies pending migrations, seeds an empty shop if `SEED_SAMPLE_DATA=true`, then builds.
    Preview builds of other branches never touch the database.
 
@@ -285,11 +287,19 @@ An **Admin** link appears in the header (desktop) and in the Profile menu; non-a
 redirected from `/admin`. Admin has two tabs:
 
 - **Products:** add and edit products; stock shows "N left", "Sold out" or "Oversold by N".
+  The photo can be uploaded from the admin's computer or phone (JPEG, PNG or WebP; the
+  browser shrinks it to 1600px and strips hidden details such as location before upload,
+  and the server checks the file really is one of those types) or pasted as an
+  images.unsplash.com link. Uploads go to [Vercel Blob](https://vercel.com/docs/vercel-blob)
+  when a store is connected (`BLOB_READ_WRITE_TOKEN`), otherwise to an `uploads/` folder on
+  the server (`UPLOAD_DIR` to move it; mount it as a volume with Docker). On Vercel the disk
+  doesn't keep files, so connect a **public** Blob store there.
   **Archive** hides a product from the shop (search, categories, recipes, baskets) while past
   orders keep it, and **Restore** brings it back. **Delete** is only offered for products
   that have never been ordered.
 - **Orders:** paid orders waiting to be packed (oldest first), on the way, delivered, and
-  unpaid. Each order shows the items, totals, delivery address and phone, and buttons to
+  unpaid checkouts (abandoned, or waiting on the bank; customers only ever see paid
+  orders). Each order shows the items, totals, delivery address and phone, and buttons to
   mark it packed, shipped (choose the carrier, add a tracking number) and delivered.
   Customers see each step in their order history and a "Track your order" row in their
   Profile. Refunds are made in the Stripe Dashboard.

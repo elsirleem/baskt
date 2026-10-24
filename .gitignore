@@ -14,6 +14,9 @@
 /coverage
 /playwright-report/
 /test-results/
+
+# product photos uploaded without Blob storage (lib/product-images.ts)
+/uploads/
 /blob-report/
 
 # next.js

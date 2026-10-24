@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isCurrentUserAdmin } from "@/lib/data";
-import { isAllowedImageUrl, ALLOWED_IMAGE_HOSTS } from "@/lib/images";
+import { isAllowedImageUrl } from "@/lib/images";
+import { storeProductImage, type StoredImage } from "@/lib/product-images";
 import { NEW_CATEGORY_VALUE } from "@/lib/categories";
 import { CARRIERS, FULFILMENT_STEPS, canMoveTo, stepIndex } from "@/lib/fulfilment";
 import { sendOrderShippedEmail } from "@/lib/order-emails";
@@ -18,6 +19,19 @@ async function requireAdmin() {
 }
 
 export type ProductFormState = { error?: string } | undefined;
+
+/** "Upload a photo" on the product form; the returned address goes in the image field. */
+export async function uploadProductImage(formData: FormData): Promise<StoredImage> {
+  await requireAdmin();
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { error: "Choose a photo to upload." };
+  try {
+    return await storeProductImage(file);
+  } catch (error) {
+    console.error("[upload] product photo failed:", error);
+    return { error: "The upload didn't work. Please try again." };
+  }
+}
 
 const productSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
@@ -34,7 +48,7 @@ const productSchema = z.object({
     .string()
     .trim()
     .refine(isAllowedImageUrl, {
-      message: `Image links must come from ${ALLOWED_IMAGE_HOSTS.join(" or ")} (starting with https://).`,
+      message: "Upload a photo, or use an image link from images.unsplash.com (starting with https://).",
     }),
   isPrivateLabel: z.boolean(),
   stock: z.coerce.number().int().min(0, "Stock cannot be negative"),
