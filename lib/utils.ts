@@ -43,3 +43,8 @@ export function greeting(now: Date): string {
   if (hour < 18) return "Good afternoon";
   return "Good evening";
 }
+
+/** "Ada" from "Ada Obi"; empty when there's no name. */
+export function firstName(name: string | null | undefined): string {
+  return name?.trim().split(/\s+/)[0] ?? "";
+}

@@ -42,6 +42,10 @@ model User {
   passwordChangedAt        DateTime?
   passwordChangedBySession String?
 
+  // The secret in the wishlist's share link (/wishlist/<token>); null when not shared.
+  // Stopping sharing clears it, so the old link stops working.
+  wishlistShareToken String? @unique
+
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
   orders        Order[]

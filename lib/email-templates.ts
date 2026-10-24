@@ -1,4 +1,4 @@
-import { formatPrice, orderNumber } from "@/lib/utils";
+import { firstName, formatPrice, orderNumber } from "@/lib/utils";
 
 /** Email bodies: inline styles and system fonts, since mail apps ignore stylesheets and web fonts. */
 
@@ -10,8 +10,6 @@ export function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
-
-const firstName = (name: string | null | undefined) => name?.trim().split(/\s+/)[0] ?? "";
 
 function layout({ preheader, heading, body }: { preheader: string; heading: string; body: string }) {
   return `<!doctype html>

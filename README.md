@@ -271,6 +271,14 @@ table via `lib/subscription.ts`. Members manage or cancel through the Stripe Bil
 `/recipes` lists Nigerian recipes; each ingredient that maps to a stocked SKU is tappable
 (add one, or "Add all to basket"). Recipes flagged `isPremium` are gated to AfroPlus.
 
+## Sharing a wishlist
+
+On **Wishlist**, "Create a share link" makes a private link (`/wishlist/<random token>`)
+to copy, or share through the phone's share sheet. Anyone with it sees the owner's first
+name and the products on the list (nothing else about the account) and can add them to
+their own basket; the page asks search engines not to index it. "Stop sharing" deletes
+the token, so the old link stops working, and sharing again makes a new one.
+
 ## Referrals
 
 Every user gets a unique code; the Profile's "Refer a friend" row shares the link. Sharing `…/register?ref=CODE` links a new

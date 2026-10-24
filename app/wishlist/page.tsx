@@ -2,10 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
-import { getCurrentUserId, getWishlist } from "@/lib/data";
+import { getCurrentUserId, getWishlist, getWishlistShareToken } from "@/lib/data";
+import { appUrl } from "@/lib/env";
 import {
   MoveToCartButton,
   RemoveFromWishlistButton,
+  ShareWishlist,
 } from "@/components/WishlistControls";
 import { BackLink, EmptyState, PageTitle, cardClass } from "@/components/ui";
 
@@ -15,7 +17,10 @@ export default async function WishlistPage() {
   const userId = await getCurrentUserId();
   if (!userId) redirect("/login");
 
-  const items = await getWishlist(userId);
+  const [items, shareToken] = await Promise.all([
+    getWishlist(userId),
+    getWishlistShareToken(userId),
+  ]);
 
   if (items.length === 0) {
     return (
@@ -32,6 +37,8 @@ export default async function WishlistPage() {
     <div className="mx-auto max-w-3xl">
       <BackLink href="/account" label="Profile" />
       <PageTitle>Your Wishlist 🤍</PageTitle>
+
+      <ShareWishlist shareUrl={shareToken && `${appUrl()}/wishlist/${shareToken}`} />
 
       <ul className="space-y-3">
         {items.map((item) => (
