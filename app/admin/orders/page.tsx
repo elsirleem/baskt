@@ -9,7 +9,8 @@ const VIEWS: { key: AdminOrderView; label: string; empty: string }[] = [
   { key: "to-fulfil", label: "To fulfil", empty: "Nothing to pack. You're all caught up." },
   { key: "shipped", label: "On the way", empty: "No orders are out for delivery." },
   { key: "delivered", label: "Delivered", empty: "No delivered orders yet." },
-  { key: "unpaid", label: "Unpaid", empty: "No unpaid or cancelled orders." },
+  // Not orders: checkouts that were abandoned or haven't been paid for yet.
+  { key: "unpaid", label: "Unpaid checkouts", empty: "No unpaid or abandoned checkouts." },
 ];
 
 const UNPAID_LABEL: Record<string, string> = {

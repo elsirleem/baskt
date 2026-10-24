@@ -1,25 +1,20 @@
-import { createHash, randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { passwordResetEmail } from "@/lib/email-templates";
 import { appUrl } from "@/lib/env";
+import { hashToken, newToken } from "@/lib/tokens";
 
 const RESET_LINK_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-/** Only this hash is stored; the token itself exists only in the emailed link. */
-function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
 
 /** Creates a one-time reset token for a user, cancelling any earlier ones. */
 export async function createPasswordResetToken(userId: string): Promise<string> {
   await prisma.passwordResetToken.deleteMany({ where: { userId } });
-  const token = randomBytes(32).toString("base64url");
+  const { token, tokenHash } = newToken();
   await prisma.passwordResetToken.create({
     data: {
       userId,
-      tokenHash: hashToken(token),
+      tokenHash,
       expiresAt: new Date(Date.now() + RESET_LINK_TTL_MS),
     },
   });

@@ -10,7 +10,7 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' blob: data: https://images.unsplash.com",
+  "img-src 'self' blob: data: https://images.unsplash.com https://*.public.blob.vercel-storage.com",
   "font-src 'self'",
   `connect-src 'self'${isDev ? " ws:" : ""}`,
   "object-src 'none'",
@@ -38,7 +38,17 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        // Photos uploaded in the admin product form (lib/product-images.ts).
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+      },
     ],
+  },
+  experimental: {
+    // Uploaded product photos go through a Server Action. They're shrunk in the
+    // browser first, and Vercel caps request bodies at 4.5 MB anyway.
+    serverActions: { bodySizeLimit: "4.5mb" },
   },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];

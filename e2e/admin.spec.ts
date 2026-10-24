@@ -29,7 +29,7 @@ test("an admin can add an own-brand product in a new category", async ({ page })
   await page.getByLabel("Badges").fill("Small batch, Test badge");
   await page.getByLabel("Category").selectOption({ label: "+ New category…" });
   await page.getByLabel("New category name").fill("E2E Drinks");
-  await page.getByLabel("Image link").fill(IMAGE);
+  await page.getByLabel(/paste an image link/).fill(IMAGE);
   await page.getByLabel(/Our Brand/).check();
   await page.getByRole("button", { name: "Create product" }).click();
 
@@ -50,7 +50,7 @@ test("bad image links are rejected and nothing typed is lost", async ({ page }) 
   await fillProduct(page, name);
   await page.getByLabel("Category").selectOption("Legumes");
   await page.getByLabel(/Our Brand/).check();
-  const image = page.getByLabel("Image link");
+  const image = page.getByLabel(/paste an image link/);
   await image.fill("https://example.com/photo.jpg");
 
   // The browser stops it first...
@@ -61,7 +61,7 @@ test("bad image links are rejected and nothing typed is lost", async ({ page }) 
   // ...and the server rejects it too, keeping everything that was typed.
   await page.locator("form").evaluate((form: HTMLFormElement) => (form.noValidate = true));
   await page.getByRole("button", { name: "Create product" }).click();
-  await expect(formAlert(page)).toContainText("Image links must come from images.unsplash.com");
+  await expect(formAlert(page)).toContainText("use an image link from images.unsplash.com");
   await expect(page.getByLabel("Name", { exact: true })).toHaveValue(name);
   await expect(page.getByLabel("Description")).toHaveValue("Added by an end-to-end test.");
   await expect(page.getByLabel("Category")).toHaveValue("Legumes");
@@ -75,7 +75,7 @@ test("a new category typed in different case reuses the existing one", async ({ 
   await fillProduct(page, name);
   await page.getByLabel("Category").selectOption({ label: "+ New category…" });
   await page.getByLabel("New category name").fill("spices");
-  await page.getByLabel("Image link").fill(IMAGE);
+  await page.getByLabel(/paste an image link/).fill(IMAGE);
   await page.getByRole("button", { name: "Create product" }).click();
   await expect(page).toHaveURL("/admin");
 
@@ -87,7 +87,7 @@ test("editing keeps the category and can turn Our Brand off", async ({ page }) =
   const name = `E2E Zobo Leaves ${stamp()}`;
   await fillProduct(page, name);
   await page.getByLabel("Category").selectOption("Pantry");
-  await page.getByLabel("Image link").fill(IMAGE);
+  await page.getByLabel(/paste an image link/).fill(IMAGE);
   await page.getByLabel(/Our Brand/).check();
   await page.getByRole("button", { name: "Create product" }).click();
   await expect(page).toHaveURL("/admin");
@@ -103,4 +103,53 @@ test("editing keeps the category and can turn Our Brand off", async ({ page }) =
   expect((await db.product.findUniqueOrThrow({ where: { id: product.id } })).isPrivateLabel).toBe(
     false,
   );
+});
+
+// A 2×2 red PNG, standing in for a photo from the admin's computer.
+const PHOTO = {
+  name: "garri.png",
+  mimeType: "image/png",
+  buffer: Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8z8DAwMDAxMDAwMDAAAANHQEDasKb6QAAAABJRU5ErkJggg==",
+    "base64",
+  ),
+};
+
+test("an admin can upload a product photo from their computer", async ({ page }) => {
+  await registerAdmin(page);
+  const name = `E2E Uploaded Photo ${stamp()}`;
+  await fillProduct(page, name);
+  await page.getByLabel("Category").selectOption("Pantry");
+
+  await page.getByLabel("Photo to upload").setInputFiles(PHOTO);
+  await expect(page.getByRole("button", { name: "Replace photo" })).toBeVisible();
+  await expect(page.getByAltText("Product photo preview")).toBeVisible();
+  // Saved locally here; on Vercel it's a Blob address.
+  const link = page.getByLabel(/paste an image link/);
+  await expect(link).toHaveValue(/^(\/uploads\/[0-9a-f]{24}\.jpg|https:\/\/.+\.public\.blob\.vercel-storage\.com\/.+)$/);
+  const uploadedUrl = await link.inputValue();
+
+  await page.getByRole("button", { name: "Create product" }).click();
+  await expect(page).toHaveURL("/admin");
+
+  const product = await db.product.findFirstOrThrow({ where: { name } });
+  expect(product.imageUrl).toBe(uploadedUrl);
+  const image = await page.request.get(product.imageUrl);
+  expect(image.ok()).toBe(true);
+  expect(image.headers()["content-type"]).toBe("image/jpeg"); // re-encoded in the browser
+
+  await page.goto(`/product/${product.slug}`);
+  const shown = page.getByRole("img", { name: product.name }).first();
+  await expect(shown).toBeVisible();
+  expect(await shown.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+});
+
+test("a file that isn't a photo is refused", async ({ page }) => {
+  await registerAdmin(page);
+  await page.goto("/admin/products/new");
+  await page
+    .getByLabel("Photo to upload")
+    .setInputFiles({ name: "notes.png", mimeType: "image/png", buffer: Buffer.from("not an image") });
+  await expect(formAlert(page)).toHaveText("Couldn't read that photo. Use a JPEG, PNG or WebP file.");
+  await expect(page.getByLabel(/paste an image link/)).toHaveValue("");
 });

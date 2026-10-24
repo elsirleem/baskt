@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { cancelAbandonedOrders } from "@/lib/orders";
+import { firstName } from "@/lib/utils";
 
 export async function getProducts(
   opts: { category?: string; query?: string; privateLabel?: boolean } = {},
@@ -205,10 +206,13 @@ export async function getRecipeBySlug(slug: string) {
   });
 }
 
+/**
+ * The customer's orders. Only paid ones count: a checkout that was abandoned or
+ * is still waiting on the bank isn't an order yet, so it stays out of history.
+ */
 export async function getOrders(userId: string) {
-  await cancelAbandonedOrders(userId);
   return prisma.order.findMany({
-    where: { userId },
+    where: { userId, status: "PAID" },
     include: { items: true },
     orderBy: { createdAt: "desc" },
   });
@@ -236,6 +240,40 @@ export async function getWishlist(userId: string) {
     include: { product: true },
     orderBy: { createdAt: "asc" },
   });
+}
+
+/** The secret in the user's wishlist share link, or null when it isn't shared. */
+export async function getWishlistShareToken(userId: string): Promise<string | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { wishlistShareToken: true },
+  });
+  return user?.wishlistShareToken ?? null;
+}
+
+/**
+ * A wishlist as anyone with its share link sees it: the owner's first name and the
+ * products still in the shop. Nothing else about the owner is exposed.
+ */
+export async function getSharedWishlist(token: string) {
+  const owner = await prisma.user.findUnique({
+    where: { wishlistShareToken: token },
+    select: {
+      id: true,
+      name: true,
+      wishlistItems: {
+        where: { product: { archivedAt: null } },
+        include: { product: true },
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  });
+  if (!owner) return null;
+  return {
+    ownerId: owner.id,
+    ownerFirstName: firstName(owner.name),
+    products: owner.wishlistItems.map((item) => item.product),
+  };
 }
 
 export async function getWishlistProductIds(userId: string): Promise<Set<string>> {

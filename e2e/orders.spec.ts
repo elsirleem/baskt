@@ -1,4 +1,4 @@
-import { createPaidOrder, expect, register, registerAdmin, test, testEmail, testIp } from "./helpers";
+import { createOrder, expect, register, registerAdmin, test, testEmail, testIp } from "./helpers";
 
 test("an admin packs, ships and delivers an order, and the customer can follow it", async ({
   browser,
@@ -9,7 +9,7 @@ test("an admin packs, ships and delivers an order, and the customer can follow i
   const email = testEmail("tracking");
   await register(shopper, email, { name: "Ada Obi" });
   await expect(shopper).toHaveURL("/");
-  const order = await createPaidOrder(email);
+  const order = await createOrder(email);
   const orderNo = `#${order.id.slice(-8).toUpperCase()}`;
 
   await shopper.goto("/account");
@@ -58,6 +58,25 @@ test("an admin packs, ships and delivers an order, and the customer can follow i
 
   await customer.close();
   await staff.close();
+});
+
+test("only paid orders appear in a customer's order history", async ({ page }) => {
+  const email = testEmail("history");
+  await register(page, email);
+  await expect(page).toHaveURL("/");
+  const unpaid = await createOrder(email, "PENDING");
+  const processing = await createOrder(email, "AWAITING_PAYMENT");
+
+  await page.goto("/orders");
+  await expect(page.getByRole("heading", { name: "No orders yet" })).toBeVisible();
+
+  const paid = await createOrder(email);
+  await page.goto("/orders");
+  await expect(page.locator(`#order-${paid.id}`)).toBeVisible();
+  for (const order of [unpaid, processing]) {
+    await expect(page.locator(`#order-${order.id}`)).toHaveCount(0);
+  }
+  await expect(page.getByText(/Awaiting payment|Payment processing/)).toHaveCount(0);
 });
 
 test("customers can't open the admin orders pages", async ({ page }) => {

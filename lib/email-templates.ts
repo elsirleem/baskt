@@ -1,4 +1,4 @@
-import { formatPrice, orderNumber } from "@/lib/utils";
+import { firstName, formatPrice, orderNumber } from "@/lib/utils";
 
 /** Email bodies: inline styles and system fonts, since mail apps ignore stylesheets and web fonts. */
 
@@ -10,8 +10,6 @@ export function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
-
-const firstName = (name: string | null | undefined) => name?.trim().split(/\s+/)[0] ?? "";
 
 function layout({ preheader, heading, body }: { preheader: string; heading: string; body: string }) {
   return `<!doctype html>
@@ -184,6 +182,30 @@ ${button(link, "Choose a new password")}
     link,
     "",
     "If you didn't ask for this, you can ignore this email; your password won't change.",
+  ].join("\n");
+
+  return { subject, html, text };
+}
+
+export function signupConfirmationEmail({ name, link }: { name: string | null; link: string }) {
+  const first = firstName(name);
+  const subject = "Confirm your email to join AfroPantry";
+
+  const html = layout({
+    preheader: "One click to finish creating your account.",
+    heading: `Welcome to AfroPantry${first ? `, ${escapeHtml(first)}` : ""}!`,
+    body: `<p style="margin:0 0 12px;color:#3C3C3E">Confirm your email address to finish creating your account. The link expires in 24 hours.</p>
+${button(link, "Confirm my email")}
+<p style="margin:16px 0 0;font-size:13px;color:#6E6E73">If you didn't sign up for AfroPantry, you can ignore this email; no account will be created.</p>`,
+  });
+
+  const text = [
+    `Welcome to AfroPantry${first ? `, ${first}` : ""}!`,
+    "",
+    "Confirm your email address to finish creating your account. The link expires in 24 hours:",
+    link,
+    "",
+    "If you didn't sign up for AfroPantry, you can ignore this email; no account will be created.",
   ].join("\n");
 
   return { subject, html, text };

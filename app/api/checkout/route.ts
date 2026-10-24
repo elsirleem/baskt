@@ -9,6 +9,7 @@ import { describeShortfall, stockShortfalls } from "@/lib/stock";
 import { ensureStripeCustomer, isStripeConfigured } from "@/lib/billing";
 import { LIMITS, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { appUrl } from "@/lib/env";
+import { publicImageUrl } from "@/lib/images";
 
 export async function POST() {
   const userId = await getCurrentUserId();
@@ -86,7 +87,7 @@ export async function POST() {
           unit_amount: item.product.priceCents,
           product_data: {
             name: productLabel(item.product),
-            images: [item.product.imageUrl],
+            images: [publicImageUrl(item.product.imageUrl, appUrl())].filter((url) => url !== undefined),
           },
         },
       }),

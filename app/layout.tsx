@@ -47,8 +47,7 @@ export default function RootLayout({
           {children}
         </main>
         <footer className="mb-[calc(4.5rem+env(safe-area-inset-bottom))] border-t border-line py-6 text-center text-xs text-ink-soft md:mb-0 md:text-sm">
-          AfroPantry — Taste of home. African essentials, delivered across the UK. Demo app;
-          payments run in Stripe test mode.
+          AfroPantry — Taste of home. African essentials, delivered across the UK.
         </footer>
         <BottomNav />
       </body>

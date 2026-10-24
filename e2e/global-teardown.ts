@@ -1,8 +1,13 @@
 import "dotenv/config";
+import { unlink } from "fs/promises";
+import path from "path";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-/** Deletes everything the browser tests created: e2e+… accounts, E2E products, counters, email log rows. */
+/**
+ * Deletes everything the browser tests created: e2e+… accounts and sign-ups, E2E
+ * products, counters, email log rows.
+ */
 export default async function globalTeardown() {
   const db = new PrismaClient({
     adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -21,6 +26,7 @@ export default async function globalTeardown() {
           // Test IPs come from testIp() (10.x.x.x).
           { key: { startsWith: "signin:ip:10." } },
           { key: { startsWith: "signup:ip:10." } },
+          { key: { startsWith: "signup-resend:ip:10." } },
           ...ids.flatMap((id) => [
             { key: `checkout:user:${id}` },
             { key: `password:user:${id}` },
@@ -29,7 +35,17 @@ export default async function globalTeardown() {
       },
     });
     await db.user.deleteMany({ where: { id: { in: ids } } });
+    await db.pendingSignup.deleteMany({ where: { email: { startsWith: "e2e+", endsWith: "@example.com" } } });
     await db.emailLog.deleteMany({ where: { to: { startsWith: "e2e+", endsWith: "@example.com" } } });
+    // Photos the tests uploaded to this machine (see lib/product-images.ts).
+    const uploaded = await db.product.findMany({
+      where: { slug: { startsWith: "e2e-" }, imageUrl: { startsWith: "/uploads/" } },
+      select: { imageUrl: true },
+    });
+    const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads");
+    await Promise.all(
+      uploaded.map(({ imageUrl }) => unlink(path.join(uploadDir, path.basename(imageUrl))).catch(() => {})),
+    );
     await db.product.deleteMany({ where: { slug: { startsWith: "e2e-" } } });
   } finally {
     await db.$disconnect();

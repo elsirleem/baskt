@@ -66,14 +66,17 @@ first run; slimming it with Next `output: "standalone"` is a future optimization
    (direct, used for migrations).
 3. Add environment variables for **Production**: `AUTH_SECRET` (a new one, e.g.
    `openssl rand -base64 32`), `AUTH_TRUST_HOST=true`, the `STRIPE_*` keys and prices,
-   `RESEND_API_KEY`, `EMAIL_FROM`, and `SEED_SAMPLE_DATA=true` if you want the sample
-   catalogue in an empty shop. Don't set `NEXT_PUBLIC_APP_URL` or `NEXTAUTH_URL`: the app
+   `RESEND_API_KEY`, `EMAIL_FROM`, `REQUIRE_EMAIL_CONFIRMATION=false` until your Resend
+   domain is verified, and `SEED_SAMPLE_DATA=true` if you want the sample catalogue in an
+   empty shop. Don't set `NEXT_PUBLIC_APP_URL` or `NEXTAUTH_URL`: the app
    uses the Vercel production domain automatically (set `NEXT_PUBLIC_APP_URL` only for a
    custom domain).
 4. In Stripe, add a webhook endpoint for `https://<your-domain>/api/webhooks/stripe` with
    the seven events listed under Testing payments, and set its signing secret as
    `STRIPE_WEBHOOK_SECRET`.
-5. Redeploy. Each production build (`scripts/vercel-build.sh`) generates the Prisma client,
+5. For product photo uploads, **Storage → Create → Blob** with **public** access, connected
+   to the project (this adds `BLOB_READ_WRITE_TOKEN`).
+6. Redeploy. Each production build (`scripts/vercel-build.sh`) generates the Prisma client,
    applies pending migrations, seeds an empty shop if `SEED_SAMPLE_DATA=true`, then builds.
    Preview builds of other branches never touch the database.
 
@@ -117,7 +120,8 @@ EMAIL_FROM="AfroPantry <onboarding@resend.dev>"
 
 Without a key, emails are logged to the terminal instead of sent. Until you verify your own
 domain in Resend, `onboarding@resend.dev` can only email the address you signed up to
-Resend with.
+Resend with. New accounts need their confirmation email, so until then either sign up with
+that address or set `REQUIRE_EMAIL_CONFIRMATION="false"`.
 
 Also generate a real auth secret with `npx auth secret` → `AUTH_SECRET`.
 
@@ -180,7 +184,7 @@ npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prism
   | Action | Limit |
   | --- | --- |
   | Sign-in | 10 per account and 50 per network, per 15 minutes |
-  | Sign-up | 5 per network per hour |
+  | Sign-up | 5 per network per hour; 3 confirmation emails per address per hour |
   | Password change | 5 per account per 15 minutes |
   | Checkout (basket, membership, Fresh Box) | 10 per account per 10 minutes (HTTP 429) |
 
@@ -192,6 +196,14 @@ npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prism
   `X-Powered-By`. The CSP allows inline scripts (no nonces) so pages can still be
   cached; switch to nonces (see the Next.js CSP guide) if you need a stricter policy.
 - **Passwords** are hashed with bcrypt at cost 12 (older cost-10 hashes keep working).
+- **Sign-ups confirm their email** (`lib/signup.ts`). Signing up stores a pending sign-up
+  and emails a link valid for 24 hours; the account is only created when that link is
+  opened and the sign-up password entered, which also signs you in. So nobody can create
+  an account for an address they can't read, an email scanner that opens links can't
+  confirm one, and if someone signs up with your address first, their link can't be
+  finished with your password (the first sign-up confirmed wins). Expired sign-ups are
+  deleted as new ones arrive. Signing in before confirming says so and sends a fresh link.
+  `REQUIRE_EMAIL_CONFIRMATION="false"` creates accounts straight away instead.
 - **Forgot password** emails a one-time link that expires in an hour; only a SHA-256 hash of
   it is stored, asking again cancels the previous link, and the page answers the same way
   whether or not an account exists (the email is sent after the response, so timing
@@ -209,7 +221,7 @@ versions (`lib/email-templates.ts`):
   by whichever of the webhook or success page marks the order paid, with an idempotency key
   so a retry can't send it twice.
 - **On its way** when an admin marks an order shipped, with the carrier and tracking number.
-- **Password reset** (see Security).
+- **Password reset** and **sign-up confirmation** (see Security).
 
 Every attempt is recorded in the `EmailLog` table (never the body), and each order's emails
 show on its admin page as Sent, Failed or Not sent. Sending never throws, so a mail problem
@@ -259,6 +271,14 @@ table via `lib/subscription.ts`. Members manage or cancel through the Stripe Bil
 `/recipes` lists Nigerian recipes; each ingredient that maps to a stocked SKU is tappable
 (add one, or "Add all to basket"). Recipes flagged `isPremium` are gated to AfroPlus.
 
+## Sharing a wishlist
+
+On **Wishlist**, "Create a share link" makes a private link (`/wishlist/<random token>`)
+to copy, or share through the phone's share sheet. Anyone with it sees the owner's first
+name and the products on the list (nothing else about the account) and can add them to
+their own basket; the page asks search engines not to index it. "Stop sharing" deletes
+the token, so the old link stops working, and sharing again makes a new one.
+
 ## Referrals
 
 Every user gets a unique code; the Profile's "Refer a friend" row shares the link. Sharing `…/register?ref=CODE` links a new
@@ -275,11 +295,19 @@ An **Admin** link appears in the header (desktop) and in the Profile menu; non-a
 redirected from `/admin`. Admin has two tabs:
 
 - **Products:** add and edit products; stock shows "N left", "Sold out" or "Oversold by N".
+  The photo can be uploaded from the admin's computer or phone (JPEG, PNG or WebP; the
+  browser shrinks it to 1600px and strips hidden details such as location before upload,
+  and the server checks the file really is one of those types) or pasted as an
+  images.unsplash.com link. Uploads go to [Vercel Blob](https://vercel.com/docs/vercel-blob)
+  when a store is connected (`BLOB_READ_WRITE_TOKEN`), otherwise to an `uploads/` folder on
+  the server (`UPLOAD_DIR` to move it; mount it as a volume with Docker). On Vercel the disk
+  doesn't keep files, so connect a **public** Blob store there.
   **Archive** hides a product from the shop (search, categories, recipes, baskets) while past
   orders keep it, and **Restore** brings it back. **Delete** is only offered for products
   that have never been ordered.
 - **Orders:** paid orders waiting to be packed (oldest first), on the way, delivered, and
-  unpaid. Each order shows the items, totals, delivery address and phone, and buttons to
+  unpaid checkouts (abandoned, or waiting on the bank; customers only ever see paid
+  orders). Each order shows the items, totals, delivery address and phone, and buttons to
   mark it packed, shipped (choose the carrier, add a tracking number) and delivered.
   Customers see each step in their order history and a "Track your order" row in their
   Profile. Refunds are made in the Stripe Dashboard.

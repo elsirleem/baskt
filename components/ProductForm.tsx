@@ -6,6 +6,7 @@ import type { Product } from "@prisma/client";
 import type { ProductFormState } from "@/lib/actions/admin";
 import { NEW_CATEGORY_VALUE } from "@/lib/categories";
 import { buttonClass, inputClass } from "@/components/ui";
+import { ProductImageField } from "@/components/ProductImageField";
 
 type Action = (
   prev: ProductFormState,
@@ -22,8 +23,6 @@ function Field({
   min,
   placeholder,
   hint,
-  pattern,
-  title,
 }: {
   label: string;
   name: string;
@@ -34,8 +33,6 @@ function Field({
   min?: string;
   placeholder?: string;
   hint?: string;
-  pattern?: string;
-  title?: string;
 }) {
   return (
     <div>
@@ -51,8 +48,6 @@ function Field({
         step={step}
         min={min}
         placeholder={placeholder}
-        pattern={pattern}
-        title={title}
         className={inputClass}
       />
       {hint && <p className="mt-1 text-xs text-ink-soft">{hint}</p>}
@@ -81,6 +76,8 @@ export function ProductForm({
     product?.category ?? categories[0] ?? NEW_CATEGORY_VALUE,
   );
   const [newCategory, setNewCategory] = useState("");
+  // Saving waits for a photo upload to finish, so it isn't saved without it.
+  const [uploading, setUploading] = useState(false);
 
   return (
     <form
@@ -197,16 +194,7 @@ export function ProductForm({
         />
       </div>
 
-      <Field
-        label="Image link"
-        name="imageUrl"
-        type="url"
-        defaultValue={product?.imageUrl}
-        placeholder="https://images.unsplash.com/..."
-        pattern="https://images\.unsplash\.com/.+"
-        title="Use an image link from images.unsplash.com"
-        hint="Paste an image link from images.unsplash.com. Other sites aren't supported yet."
-      />
+      <ProductImageField defaultValue={product?.imageUrl} onUploadingChange={setUploading} />
 
       <label className="flex cursor-pointer items-start gap-3 rounded-xl border-[1.5px] border-line bg-white px-4 py-3">
         <input
@@ -230,8 +218,8 @@ export function ProductForm({
       )}
 
       <div className="flex items-center gap-3 pt-2">
-        <button type="submit" disabled={pending} className={buttonClass.primary}>
-          {pending ? "Saving…" : submitLabel}
+        <button type="submit" disabled={pending || uploading} className={buttonClass.primary}>
+          {pending ? "Saving…" : uploading ? "Uploading photo…" : submitLabel}
         </button>
         <Link href="/admin" className={buttonClass.outline}>
           Cancel

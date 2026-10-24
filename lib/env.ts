@@ -9,6 +9,15 @@ export function configuredEnv(value: string | undefined): string | undefined {
 }
 
 /**
+ * Whether new accounts must confirm their email before they're created. On unless
+ * REQUIRE_EMAIL_CONFIRMATION is "false", e.g. for a demo whose email provider can
+ * only reach the owner's inbox.
+ */
+export function emailConfirmationRequired(): boolean {
+  return process.env.REQUIRE_EMAIL_CONFIRMATION?.trim().toLowerCase() !== "false";
+}
+
+/**
  * The site's public address, for Stripe return links and links in emails:
  * NEXT_PUBLIC_APP_URL if set, otherwise the Vercel production domain (set
  * automatically on Vercel), otherwise localhost.

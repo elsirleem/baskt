@@ -42,6 +42,10 @@ model User {
   passwordChangedAt        DateTime?
   passwordChangedBySession String?
 
+  // The secret in the wishlist's share link (/wishlist/<token>); null when not shared.
+  // Stopping sharing clears it, so the old link stops working.
+  wishlistShareToken String? @unique
+
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
   orders        Order[]
@@ -246,11 +250,29 @@ model PasswordResetToken {
   @@index([userId])
 }
 
+/// A sign-up waiting for its email to be confirmed (see lib/signup.ts). The account
+/// is only created from the emailed link, so an address nobody confirms never
+/// becomes a user. Several can exist for one email; the first confirmed wins.
+/// As with reset links, only a hash of the token is stored.
+model PendingSignup {
+  id           String   @id @default(cuid())
+  email        String
+  name         String
+  passwordHash String
+  refCode      String?
+  tokenHash    String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt]) // clearing out expired sign-ups
+}
+
 /// Every email the shop tried to send, and what happened. Never stores the body.
 model EmailLog {
   id         String   @id @default(cuid())
   to         String
-  kind       String // order_confirmation | order_shipped | password_reset
+  kind       String // order_confirmation | order_shipped | password_reset | signup_confirmation
   subject    String
   status     String // sent | failed | skipped
   providerId String? // Resend's email id
