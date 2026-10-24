@@ -6,6 +6,8 @@ export const LIMITS = {
   signInPerEmail: { limit: 10, windowSeconds: 15 * 60 },
   signInPerIp: { limit: 50, windowSeconds: 15 * 60 },
   signUpPerIp: { limit: 5, windowSeconds: 60 * 60 },
+  signUpEmailsPerAddress: { limit: 3, windowSeconds: 60 * 60 },
+  signUpResendPerIp: { limit: 10, windowSeconds: 60 * 60 },
   passwordChangePerUser: { limit: 5, windowSeconds: 15 * 60 },
   checkoutPerUser: { limit: 10, windowSeconds: 10 * 60 },
   resetEmailPerAddress: { limit: 3, windowSeconds: 60 * 60 },

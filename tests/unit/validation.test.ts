@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "vitest";
 import type Stripe from "stripe";
-import { appUrl, configuredEnv } from "@/lib/env";
+import { appUrl, configuredEnv, emailConfirmationRequired } from "@/lib/env";
 import { isAllowedImageUrl } from "@/lib/images";
 import { clientIp } from "@/lib/rate-limit";
 import { shippingFromSession } from "@/lib/orders";
@@ -104,5 +104,24 @@ describe("appUrl", () => {
     delete process.env.NEXT_PUBLIC_APP_URL;
     delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
     expect(appUrl()).toBe("http://localhost:3000");
+  });
+});
+
+describe("emailConfirmationRequired", () => {
+  const saved = process.env.REQUIRE_EMAIL_CONFIRMATION;
+  afterEach(() => {
+    if (saved === undefined) delete process.env.REQUIRE_EMAIL_CONFIRMATION;
+    else process.env.REQUIRE_EMAIL_CONFIRMATION = saved;
+  });
+
+  test.each([undefined, "", "true", "yes"])("%j → required", (value) => {
+    if (value === undefined) delete process.env.REQUIRE_EMAIL_CONFIRMATION;
+    else process.env.REQUIRE_EMAIL_CONFIRMATION = value;
+    expect(emailConfirmationRequired()).toBe(true);
+  });
+
+  test.each(["false", "FALSE", " false "])("%j → off", (value) => {
+    process.env.REQUIRE_EMAIL_CONFIRMATION = value;
+    expect(emailConfirmationRequired()).toBe(false);
   });
 });

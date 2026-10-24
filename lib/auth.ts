@@ -5,12 +5,19 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { LIMITS, clientIp, rateLimit } from "@/lib/rate-limit";
+import { findPendingSignup } from "@/lib/signup";
 
 export const RATE_LIMITED_CODE = "rate_limited";
+export const UNCONFIRMED_CODE = "email_unconfirmed";
 
 /** Thrown from `authorize` so the login form can say "too many attempts". */
 class TooManyAttempts extends CredentialsSignin {
   code = RATE_LIMITED_CODE;
+}
+
+/** Thrown when the details match a sign-up whose email hasn't been confirmed yet. */
+class EmailNotConfirmed extends CredentialsSignin {
+  code = UNCONFIRMED_CODE;
 }
 
 const credentialsSchema = z.object({
@@ -44,7 +51,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!byEmail.ok) throw new TooManyAttempts();
 
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return null;
+        if (!user) {
+          if (await findPendingSignup(email, password)) throw new EmailNotConfirmed();
+          return null;
+        }
 
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;

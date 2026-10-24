@@ -1,8 +1,9 @@
 import "dotenv/config";
 import { test as base, expect, type Page } from "@playwright/test";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type OrderStatus } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { configuredEnv } from "../lib/env";
+import { configuredEnv, emailConfirmationRequired } from "../lib/env";
+import { confirmSignup, renewSignupToken } from "../lib/signup";
 
 /** Direct database access for setup, e.g. making a test user an admin. */
 export const db = new PrismaClient({
@@ -35,16 +36,37 @@ export { expect };
 
 export const PASSWORD = "password123";
 
+/**
+ * Signs up through the form. When new accounts must confirm their email (the
+ * default), it then does what the emailed link does and signs in, so a successful
+ * sign-up always ends signed in. `confirm: false` stops at "Check your inbox".
+ */
 export async function register(
   page: Page,
   email: string,
-  { name = "Test Shopper", password = PASSWORD } = {},
+  { name = "Test Shopper", password = PASSWORD, confirm = true } = {},
 ) {
   await page.goto("/register");
   await page.getByLabel("Name", { exact: true }).fill(name);
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
+  if (!emailConfirmationRequired() || !confirm) return;
+
+  const inbox = page.getByRole("heading", { name: "Check your inbox" });
+  await expect(inbox.or(formAlert(page))).toBeVisible();
+  if (!(await inbox.isVisible())) return; // the form refused it
+
+  const link = await signupLink(email);
+  expect(await confirmSignup(link, password)).toBe("created");
+  await signIn(page, email, password);
+}
+
+/** A working confirmation link token for a sign-up (replacing the emailed one). */
+export async function signupLink(email: string): Promise<string> {
+  const renewed = await renewSignupToken(email.trim().toLowerCase());
+  if (!renewed) throw new Error(`No sign-up waiting for ${email}`);
+  return renewed.token;
 }
 
 export async function signIn(page: Page, email: string, password = PASSWORD) {
@@ -102,16 +124,17 @@ export async function createTestProduct(stock: number) {
 
 /**
  * A paid order with a delivery address, as Stripe would leave it (real payments
- * need Stripe keys). Deleted with its e2e user by the teardown.
+ * need Stripe keys), or an unpaid checkout with another status. Deleted with its
+ * e2e user by the teardown.
  */
-export async function createPaidOrder(email: string) {
+export async function createOrder(email: string, status: OrderStatus = "PAID") {
   const user = await db.user.findUniqueOrThrow({ where: { email } });
   const product = await db.product.findUniqueOrThrow({ where: { slug: "white-garri-1kg" } });
   return db.order.create({
     data: {
       userId: user.id,
-      status: "PAID",
-      paidAt: new Date(),
+      status,
+      paidAt: status === "PAID" ? new Date() : null,
       subtotalCents: 898,
       deliveryCents: 499,
       totalCents: 1397,

@@ -5,6 +5,7 @@ import {
   orderConfirmationEmail,
   orderShippedEmail,
   passwordResetEmail,
+  signupConfirmationEmail,
 } from "@/lib/email-templates";
 
 const order = {
@@ -101,4 +102,14 @@ test("password reset email carries the link and says it expires", () => {
   expect(email.text).toContain("https://afropantry.test/reset-password?token=abc");
   expect(email.text).toContain("expires in 1 hour");
   expect(email.html).toContain('href="https://afropantry.test/reset-password?token=abc"');
+});
+
+test("sign-up email carries the link and says nothing happens if ignored", () => {
+  const email = signupConfirmationEmail({ name: "Ada <Obi>", link: "https://afropantry.test/confirm-email?token=abc" });
+  expect(email.subject).toBe("Confirm your email to join AfroPantry");
+  expect(email.text).toContain("https://afropantry.test/confirm-email?token=abc");
+  expect(email.text).toContain("expires in 24 hours");
+  expect(email.text).toContain("no account will be created");
+  expect(email.html).toContain('href="https://afropantry.test/confirm-email?token=abc"');
+  expect(email.html).toContain("Welcome to AfroPantry, Ada!");
 });

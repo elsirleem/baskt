@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import type { FormState } from "@/lib/actions/auth";
 import { buttonClass, cardClass, inputClass } from "@/components/ui";
+import { CheckInbox } from "@/components/SignupConfirmation";
 
 type Action = (prev: FormState, formData: FormData) => Promise<FormState>;
 
@@ -25,6 +26,7 @@ export function AuthForm({
   );
 
   const isRegister = mode === "register";
+  if (state?.confirmEmail) return <CheckInbox email={state.confirmEmail} />;
 
   return (
     <div className="mx-auto max-w-sm pt-2 md:pt-8">

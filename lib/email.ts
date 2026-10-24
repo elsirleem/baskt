@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { configuredEnv } from "@/lib/env";
 
-export type EmailKind = "order_confirmation" | "order_shipped" | "password_reset";
+export type EmailKind =
+  | "order_confirmation"
+  | "order_shipped"
+  | "password_reset"
+  | "signup_confirmation";
 
 export type Email = {
   to: string;

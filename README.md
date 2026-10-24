@@ -66,8 +66,9 @@ first run; slimming it with Next `output: "standalone"` is a future optimization
    (direct, used for migrations).
 3. Add environment variables for **Production**: `AUTH_SECRET` (a new one, e.g.
    `openssl rand -base64 32`), `AUTH_TRUST_HOST=true`, the `STRIPE_*` keys and prices,
-   `RESEND_API_KEY`, `EMAIL_FROM`, and `SEED_SAMPLE_DATA=true` if you want the sample
-   catalogue in an empty shop. Don't set `NEXT_PUBLIC_APP_URL` or `NEXTAUTH_URL`: the app
+   `RESEND_API_KEY`, `EMAIL_FROM`, `REQUIRE_EMAIL_CONFIRMATION=false` until your Resend
+   domain is verified, and `SEED_SAMPLE_DATA=true` if you want the sample catalogue in an
+   empty shop. Don't set `NEXT_PUBLIC_APP_URL` or `NEXTAUTH_URL`: the app
    uses the Vercel production domain automatically (set `NEXT_PUBLIC_APP_URL` only for a
    custom domain).
 4. In Stripe, add a webhook endpoint for `https://<your-domain>/api/webhooks/stripe` with
@@ -117,7 +118,8 @@ EMAIL_FROM="AfroPantry <onboarding@resend.dev>"
 
 Without a key, emails are logged to the terminal instead of sent. Until you verify your own
 domain in Resend, `onboarding@resend.dev` can only email the address you signed up to
-Resend with.
+Resend with. New accounts need their confirmation email, so until then either sign up with
+that address or set `REQUIRE_EMAIL_CONFIRMATION="false"`.
 
 Also generate a real auth secret with `npx auth secret` → `AUTH_SECRET`.
 
@@ -180,7 +182,7 @@ npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prism
   | Action | Limit |
   | --- | --- |
   | Sign-in | 10 per account and 50 per network, per 15 minutes |
-  | Sign-up | 5 per network per hour |
+  | Sign-up | 5 per network per hour; 3 confirmation emails per address per hour |
   | Password change | 5 per account per 15 minutes |
   | Checkout (basket, membership, Fresh Box) | 10 per account per 10 minutes (HTTP 429) |
 
@@ -192,6 +194,14 @@ npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prism
   `X-Powered-By`. The CSP allows inline scripts (no nonces) so pages can still be
   cached; switch to nonces (see the Next.js CSP guide) if you need a stricter policy.
 - **Passwords** are hashed with bcrypt at cost 12 (older cost-10 hashes keep working).
+- **Sign-ups confirm their email** (`lib/signup.ts`). Signing up stores a pending sign-up
+  and emails a link valid for 24 hours; the account is only created when that link is
+  opened and the sign-up password entered, which also signs you in. So nobody can create
+  an account for an address they can't read, an email scanner that opens links can't
+  confirm one, and if someone signs up with your address first, their link can't be
+  finished with your password (the first sign-up confirmed wins). Expired sign-ups are
+  deleted as new ones arrive. Signing in before confirming says so and sends a fresh link.
+  `REQUIRE_EMAIL_CONFIRMATION="false"` creates accounts straight away instead.
 - **Forgot password** emails a one-time link that expires in an hour; only a SHA-256 hash of
   it is stored, asking again cancels the previous link, and the page answers the same way
   whether or not an account exists (the email is sent after the response, so timing
@@ -209,7 +219,7 @@ versions (`lib/email-templates.ts`):
   by whichever of the webhook or success page marks the order paid, with an idempotency key
   so a retry can't send it twice.
 - **On its way** when an admin marks an order shipped, with the carrier and tracking number.
-- **Password reset** (see Security).
+- **Password reset** and **sign-up confirmation** (see Security).
 
 Every attempt is recorded in the `EmailLog` table (never the body), and each order's emails
 show on its admin page as Sent, Failed or Not sent. Sending never throws, so a mail problem
