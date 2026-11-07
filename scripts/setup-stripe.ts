@@ -19,14 +19,14 @@ async function main() {
     currency: "gbp",
     unit_amount: 499,
     recurring: { interval: "month" },
-    product_data: { name: "AfroBasic" },
+    product_data: { name: "baskt Basic" },
   });
 
   const plus = await stripe.prices.create({
     currency: "gbp",
     unit_amount: 3999,
     recurring: { interval: "year" },
-    product_data: { name: "AfroPlus" },
+    product_data: { name: "baskt Plus" },
   });
 
   // Fresh Produce Box sizes (monthly).

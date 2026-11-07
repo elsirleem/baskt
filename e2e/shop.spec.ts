@@ -66,10 +66,10 @@ test("checkout explains when payments aren't set up", async ({ page }) => {
   await expect(page.getByText(/Stripe is not configured/)).toBeVisible();
 });
 
-test("non-members see the AfroPlus recipe as locked", async ({ page }) => {
+test("non-members see the baskt Plus recipe as locked", async ({ page }) => {
   await register(page, testEmail("recipe"));
   await expect(page).toHaveURL("/");
   await page.goto("/recipes/suya-skewers");
-  await expect(page.getByRole("heading", { name: "This is an AfroPlus recipe" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This is a baskt Plus recipe" })).toBeVisible();
   await expect(page.getByRole("heading", { name: /Ingredients/ })).toHaveCount(0);
 });

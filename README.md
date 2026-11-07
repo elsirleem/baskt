@@ -24,10 +24,10 @@ get a top menu.
 | **Emails** (Resend): order confirmation, "on its way" with tracking, password reset | `lib/email.ts`, `lib/email-templates.ts`, `lib/order-emails.ts` |
 | Basket: add / update qty / remove, GBP, member pricing, free-delivery progress bar | `app/cart`, `lib/actions/cart.ts` |
 | Wishlist | `app/wishlist`, `lib/actions/wishlist.ts` |
-| **Membership tiers** (Pay As You Go / AfroBasic £4.99-mo / AfroPlus £39.99-yr) via Stripe Billing | `app/membership`, `lib/billing.ts`, `lib/subscription.ts` |
-| **Member benefits**: 5%/10% off, AfroPlus free delivery, premium recipes | `lib/pricing.ts` |
+| **Membership tiers** (Pay As You Go / baskt Basic £4.99-mo / baskt Plus £39.99-yr) via Stripe Billing | `app/membership`, `lib/billing.ts`, `lib/subscription.ts` |
+| **Member benefits**: 5%/10% off, baskt Plus free delivery, premium recipes | `lib/pricing.ts` |
 | **Fresh Produce Box**: monthly subscription, 3 sizes, Mon–Wed delivery day | `app/fresh`, `lib/freshbox.ts`, `app/api/fresh/checkout` |
-| **Recipe library** with amounts, difficulty, tappable ingredients → basket (premium gated to AfroPlus) | `app/recipes`, `lib/actions/cart.ts` |
+| **Recipe library** with amounts, difficulty, tappable ingredients → basket (premium gated to baskt Plus) | `app/recipes`, `lib/actions/cart.ts` |
 | **Referral engine**: per-user code, £5 credit each way on first order | `lib/referral.ts`, `lib/orders.ts`, `app/account` |
 | Free delivery over £70 (always for Plus) | `lib/pricing.ts` |
 | Secure checkout with UK delivery address + phone, order records (discount/delivery/credit/address snapshot) | `app/api/checkout`, `app/api/webhooks/stripe` |
@@ -138,7 +138,7 @@ added through the admin are left alone.
 ### 4. (For memberships) provision Stripe prices
 
 ```bash
-npm run setup-stripe   # creates the AfroBasic/AfroPlus + Fresh Box prices, prints the IDs for .env
+npm run setup-stripe   # creates the baskt Basic/baskt Plus + Fresh Box prices, prints the IDs for .env
 ```
 
 ### 5. Run
@@ -269,7 +269,7 @@ table via `lib/subscription.ts`. Members manage or cancel through the Stripe Bil
 ## Recipes
 
 `/recipes` lists Nigerian recipes; each ingredient that maps to a stocked SKU is tappable
-(add one, or "Add all to basket"). Recipes flagged `isPremium` are gated to AfroPlus.
+(add one, or "Add all to basket"). Recipes flagged `isPremium` are gated to baskt Plus.
 
 ## Sharing a wishlist
 
@@ -339,7 +339,7 @@ once, or "Manage subscription" fails.
 | `npm test` | Unit tests: pricing and delivery rules, Fresh Box dates, formatting, input checks. No database needed. |
 | `npm run test:db` | Database tests: marking orders paid (including the webhook and success page finishing at the same moment) and attempt limits. |
 | `npm run test:e2e` | Browser tests (Playwright): shopping, accounts, admin, security limits and headers. |
-| `E2E_STRIPE=1 npm run test:e2e` | Also runs a real purchase, AfroPlus subscription and billing portal visit through Stripe's test mode (needs test keys; deletes its test customer in Stripe afterwards). |
+| `E2E_STRIPE=1 npm run test:e2e` | Also runs a real purchase, baskt Plus subscription and billing portal visit through Stripe's test mode (needs test keys; deletes its test customer in Stripe afterwards). |
 
 - **Database tests** use a separate database: your `DATABASE_URL` with `_test` added to its
   name (or `TEST_DATABASE_URL`). It's created and migrated automatically, emptied between

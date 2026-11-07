@@ -55,7 +55,7 @@ export default async function RecipePage(props: {
       <div className="relative -mt-5 rounded-t-3xl bg-white px-5 pb-6 pt-6 md:mt-6 md:rounded-2xl md:p-8 md:shadow-[0_2px_10px_rgba(0,0,0,0.06)]">
         {recipe.isPremium && (
           <span className="mb-2 inline-block rounded-full bg-gold px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink">
-            ⭐ AfroPlus recipe
+            ⭐ baskt Plus recipe
           </span>
         )}
         <h1 className="font-display text-[22px] font-bold md:text-3xl">{recipe.title}</h1>
@@ -72,10 +72,10 @@ export default async function RecipePage(props: {
             <p className="text-3xl" aria-hidden="true">
               ⭐
             </p>
-            <h2 className="mt-2 font-display text-xl font-bold">This is an AfroPlus recipe</h2>
+            <h2 className="mt-2 font-display text-xl font-bold">This is a baskt Plus recipe</h2>
             <p className="mt-2 text-sm text-ink-mid">
               Unlock the premium recipe library — plus 10% off and free delivery on every
-              order — with AfroPlus.
+              order — with baskt Plus.
             </p>
             <Link href="/membership" className={`${buttonClass.primary} mt-4`}>
               See plans
@@ -170,8 +170,8 @@ export default async function RecipePage(props: {
                 <p className="text-[13px] font-semibold text-ink">💡 baskt tip</p>
                 <p className="mt-1 text-[13px] leading-relaxed text-ink-mid">
                   {tier === "PLUS"
-                    ? "As an AfroPlus member, your 10% saving is applied automatically at checkout."
-                    : "Tap + Add to drop ingredients into your basket. AfroPlus members save 10% automatically at checkout."}
+                    ? "As a baskt Plus member, your 10% saving is applied automatically at checkout."
+                    : "Tap + Add to drop ingredients into your basket. baskt Plus members save 10% automatically at checkout."}
                 </p>
               </div>
             </section>

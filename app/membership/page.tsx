@@ -24,7 +24,7 @@ const TIERS = [
   },
   {
     key: "MONTHLY" as const,
-    name: "AfroBasic",
+    name: "baskt Basic",
     price: formatPrice(MONTHLY_CENTS),
     period: "per month · billed monthly",
     perks: [
@@ -37,7 +37,7 @@ const TIERS = [
   },
   {
     key: "PLUS" as const,
-    name: "AfroPlus ⭐",
+    name: "baskt Plus ⭐",
     price: formatPrice(PLUS_YEARLY_CENTS),
     period: `per year · saves ${formatPrice(MONTHLY_CENTS * 12 - PLUS_YEARLY_CENTS)} vs monthly`,
     highlight: true,
@@ -49,7 +49,7 @@ const TIERS = [
     ],
     cta: {
       tier: "PLUS" as const,
-      label: `Get AfroPlus — ${formatPrice(PLUS_YEARLY_CENTS)}/yr`,
+      label: `Get baskt Plus — ${formatPrice(PLUS_YEARLY_CENTS)}/yr`,
       variant: "primary" as const,
     },
   },

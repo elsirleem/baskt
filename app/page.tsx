@@ -53,7 +53,7 @@ export default async function Home(props: {
           <div className="absolute -right-5 -top-5 h-36 w-36 rounded-full bg-white/5" />
           <div className="absolute -bottom-10 right-8 h-32 w-32 rounded-full bg-gold/15" />
           <span className="relative inline-block rounded-full bg-gold px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink">
-            ✨ AfroPlus members
+            ✨ baskt Plus members
           </span>
           <h1 className="relative mt-2 max-w-[190px] font-display text-xl font-bold leading-snug text-white md:max-w-md md:text-3xl">
             {tier === "PLUS" ? "You save 10% on every order" : "Save 10% on every order"}
@@ -147,7 +147,7 @@ export default async function Home(props: {
               className="flex items-center justify-between gap-3 rounded-2xl border-[1.5px] border-gold bg-gold-light px-5 py-4 transition hover:brightness-[0.98]"
             >
               <div>
-                <p className="font-display text-[15px] font-bold text-ink">Upgrade to AfroPlus ⭐</p>
+                <p className="font-display text-[15px] font-bold text-ink">Upgrade to baskt Plus ⭐</p>
                 <p className="text-xs text-ink-mid">10% off + free delivery on all orders</p>
               </div>
               <div className="text-right">
