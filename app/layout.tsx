@@ -16,13 +16,13 @@ const fraunces = Fraunces({
 
 export const metadata: Metadata = {
   title: {
-    default: "AfroPantry — Taste of home. African essentials, delivered.",
-    template: "%s — AfroPantry",
+    default: "baskt — Taste of home. African essentials, delivered.",
+    template: "%s — baskt",
   },
   description:
     "Authentic African groceries delivered across the UK. Subscribe, save, and cook with in-app recipes. Free delivery over £70.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "AfroPantry", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "baskt", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
@@ -47,7 +47,7 @@ export default function RootLayout({
           {children}
         </main>
         <footer className="mb-[calc(4.5rem+env(safe-area-inset-bottom))] border-t border-line py-6 text-center text-xs text-ink-soft md:mb-0 md:text-sm">
-          AfroPantry — Taste of home. African essentials, delivered across the UK.
+          baskt — Taste of home. African essentials, delivered across the UK.
         </footer>
         <BottomNav />
       </body>

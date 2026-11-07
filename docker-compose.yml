@@ -20,7 +20,7 @@ services:
   app:
     build:
       context: .
-    container_name: afropantry-app
+    container_name: baskt-app
     restart: unless-stopped
     ports:
       - "3000:3000"

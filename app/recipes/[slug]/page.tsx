@@ -167,7 +167,7 @@ export default async function RecipePage(props: {
               </ol>
 
               <div className="mt-4 rounded-2xl border-[1.5px] border-gold bg-gold-light p-3.5">
-                <p className="text-[13px] font-semibold text-ink">💡 AfroPantry tip</p>
+                <p className="text-[13px] font-semibold text-ink">💡 baskt tip</p>
                 <p className="mt-1 text-[13px] leading-relaxed text-ink-mid">
                   {tier === "PLUS"
                     ? "As an AfroPlus member, your 10% saving is applied automatically at checkout."

@@ -1,4 +1,4 @@
-# 🧺 AfroPantry — Taste of home. African essentials, delivered.
+# 🧺 baskt — Taste of home. African essentials, delivered.
 
 A subscription-first African grocery platform for the UK diaspora: browse authentic
 staples, subscribe for member savings, cook with in-app recipes, refer friends for credit,
@@ -18,7 +18,7 @@ get a top menu.
 
 | Feature | Where |
 | --- | --- |
-| Catalogue: 28 African SKUs (7 AfroPantry private-label), pack sizes, badges, search, category tiles | `app/page.tsx`, `lib/data.ts` |
+| Catalogue: 28 African SKUs (7 baskt private-label), pack sizes, badges, search, category tiles | `app/page.tsx`, `lib/data.ts` |
 | Product pages: quantity picker, "Use in these recipes" links | `app/product/[slug]/page.tsx` |
 | Accounts: register / sign in / sign out, settings (name, password), forgot password | `app/login`, `app/register`, `app/account/settings`, `app/forgot-password`, `lib/auth.ts` |
 | **Emails** (Resend): order confirmation, "on its way" with tracking, password reset | `lib/email.ts`, `lib/email-templates.ts`, `lib/order-emails.ts` |
@@ -115,7 +115,7 @@ For emails, add a [Resend](https://resend.com) API key ("Sending access" is enou
 
 ```env
 RESEND_API_KEY="re_..."
-EMAIL_FROM="AfroPantry <onboarding@resend.dev>"
+EMAIL_FROM="baskt <onboarding@resend.dev>"
 ```
 
 Without a key, emails are logged to the terminal instead of sent. Until you verify your own
@@ -163,7 +163,7 @@ In production, only ever run `db:deploy`. Never run `prisma db push`,
 use a managed Postgres with automatic backups and point-in-time recovery; take a
 backup before deploying a migration that changes or removes columns.
 
-**Databases created before migrations** (with the old `db:push` and the AfroPantry
+**Databases created before migrations** (with the old `db:push` and the AfroPantry-era
 schema) need a one-time baseline so Prisma knows the tables already exist:
 
 ```bash
@@ -228,7 +228,7 @@ show on its admin page as Sent, Failed or Not sent. Sending never throws, so a m
 can't break checkout or an admin action. Addresses on reserved test domains (`example.com`,
 `.test`, `.invalid`, `localhost`) are never emailed, which keeps test accounts out of your
 Resend quota. Before launch, [verify your domain](https://resend.com/domains) and set
-`EMAIL_FROM` to an address on it, e.g. `AfroPantry <orders@afropantry.co.uk>`.
+`EMAIL_FROM` to an address on it, e.g. `baskt <orders@baskt.co.uk>`.
 - **Docker** runs the app as the unprivileged `node` user.
 
 ## How the money works

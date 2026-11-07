@@ -39,7 +39,7 @@ describe("signing up", () => {
 
     expect(await prisma.user.count()).toBe(0);
     const [email] = sent();
-    expect(email.body.subject).toBe("Confirm your email to join AfroPantry");
+    expect(email.body.subject).toBe("Confirm your email to join baskt");
     expect(email.body.text).toContain(`/confirm-email?token=${token}`);
   });
 

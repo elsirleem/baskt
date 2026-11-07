@@ -47,8 +47,8 @@ describe("publicImageUrl (photos shown on Stripe's checkout page)", () => {
   });
 
   test("makes uploaded photos absolute on the live site", () => {
-    expect(publicImageUrl("/uploads/a.jpg", "https://afropantry.co.uk")).toBe(
-      "https://afropantry.co.uk/uploads/a.jpg",
+    expect(publicImageUrl("/uploads/a.jpg", "https://baskt.co.uk")).toBe(
+      "https://baskt.co.uk/uploads/a.jpg",
     );
   });
 
@@ -116,9 +116,9 @@ describe("appUrl", () => {
   });
 
   test("uses NEXT_PUBLIC_APP_URL first, without a trailing slash", () => {
-    process.env.NEXT_PUBLIC_APP_URL = "https://afropantry.co.uk/";
+    process.env.NEXT_PUBLIC_APP_URL = "https://baskt.co.uk/";
     process.env.VERCEL_PROJECT_PRODUCTION_URL = "baskt.vercel.app";
-    expect(appUrl()).toBe("https://afropantry.co.uk");
+    expect(appUrl()).toBe("https://baskt.co.uk");
   });
 
   test("falls back to the Vercel production domain", () => {

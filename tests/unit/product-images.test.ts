@@ -16,7 +16,7 @@ async function load() {
 }
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), "afropantry-uploads-"));
+  dir = await mkdtemp(path.join(tmpdir(), "baskt-uploads-"));
   vi.stubEnv("UPLOAD_DIR", dir);
   vi.stubEnv("BLOB_READ_WRITE_TOKEN", "");
   vi.stubEnv("BLOB_STORE_ID", "");

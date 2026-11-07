@@ -36,8 +36,8 @@ export function AuthForm({
         </h1>
         <p className="mt-1 text-sm text-ink-soft">
           {isRegister
-            ? "Join AfroPantry for African essentials delivered across the UK."
-            : "Sign in to your AfroPantry account."}
+            ? "Join baskt for African essentials delivered across the UK."
+            : "Sign in to your baskt account."}
         </p>
 
         {notice && (

@@ -45,7 +45,7 @@ describe("sendEmail", () => {
     expect(call.headers.Authorization).toBe("Bearer re_test_only_key");
     expect(call.headers["Idempotency-Key"]).toBe("order-shipped/o1");
     expect(call.body).toMatchObject({ to: ["ada@mail.co.uk"], subject: "Hello", text: "Hi" });
-    expect(call.body.from).toContain("AfroPantry");
+    expect(call.body.from).toContain("baskt");
     const log = await prisma.emailLog.findFirstOrThrow();
     expect([log.status, log.providerId, log.kind]).toEqual(["sent", "email_123", "order_shipped"]);
   });

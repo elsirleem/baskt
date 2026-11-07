@@ -8,10 +8,10 @@ export function ReferralShareRow({ link, rewardLabel }: { link: string; rewardLa
   const [copied, setCopied] = useState(false);
 
   const share = async () => {
-    const text = `Get African essentials delivered with AfroPantry — we both get ${rewardLabel} credit when you place your first order.`;
+    const text = `Get African essentials delivered with baskt — we both get ${rewardLabel} credit when you place your first order.`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: "AfroPantry", text, url: link });
+        await navigator.share({ title: "baskt", text, url: link });
         return;
       } catch {
         // Share sheet dismissed or unavailable — fall back to copying.

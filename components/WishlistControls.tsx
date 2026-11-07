@@ -118,7 +118,7 @@ export function ShareWishlist({ shareUrl }: { shareUrl: string | null }) {
           <button
             type="button"
             onClick={() =>
-              navigator.share({ title: "My AfroPantry wishlist", url: shareUrl }).catch(() => {})
+              navigator.share({ title: "My baskt wishlist", url: shareUrl }).catch(() => {})
             }
             className={buttonClass.soft}
           >

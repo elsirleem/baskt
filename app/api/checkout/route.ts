@@ -116,7 +116,7 @@ export async function POST() {
         amount_off: savingsCents,
         currency,
         duration: "once",
-        name: "AfroPantry savings",
+        name: "baskt savings",
         max_redemptions: 1,
         redeem_by: expiresAt + 60,
       });

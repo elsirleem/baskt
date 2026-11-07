@@ -61,7 +61,7 @@ describe("computeTotals", () => {
   });
 });
 
-test("plan names match the AfroPantry branding", () => {
+test("membership plans keep their display names", () => {
   expect(TIER_LABEL).toEqual({
     PAYG: "Pay As You Go",
     MONTHLY: "AfroBasic",

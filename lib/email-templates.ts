@@ -22,7 +22,7 @@ function layout({ preheader, heading, body }: { preheader: string; heading: stri
     <h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:21px">${heading}</h1>
     ${body}
   </div>
-  <p style="margin:16px 0 0;font-size:12px;color:#6E6E73">AfroPantry · African essentials, delivered across the UK.</p>
+  <p style="margin:16px 0 0;font-size:12px;color:#6E6E73">baskt · African essentials, delivered across the UK.</p>
 </div>
 </body>
 </html>`;
@@ -84,7 +84,7 @@ export function orderConfirmationEmail({
   const first = firstName(name);
   const money = (cents: number) => formatPrice(cents, order.currency);
   const address = addressLines(order);
-  const subject = `Your AfroPantry order #${number} is confirmed`;
+  const subject = `Your baskt order #${number} is confirmed`;
 
   const itemsHtml = order.items
     .map(
@@ -140,7 +140,7 @@ export function orderShippedEmail({
 }) {
   const number = orderNumber(order.id);
   const first = firstName(name);
-  const subject = `Your AfroPantry order #${number} is on its way`;
+  const subject = `Your baskt order #${number} is on its way`;
   const sentWith = carrier ? `It's been sent with ${carrier}.` : "It's been sent.";
 
   const html = layout({
@@ -165,12 +165,12 @@ ${button(`${appUrl}/orders`, "See your order")}`,
 
 export function passwordResetEmail({ name, link }: { name: string | null; link: string }) {
   const first = firstName(name);
-  const subject = "Reset your AfroPantry password";
+  const subject = "Reset your baskt password";
 
   const html = layout({
     preheader: "Use this link within an hour to choose a new password.",
     heading: `Reset your password${first ? `, ${escapeHtml(first)}` : ""}`,
-    body: `<p style="margin:0 0 12px;color:#3C3C3E">Someone (hopefully you) asked to reset the password for your AfroPantry account. The link works once and expires in 1 hour.</p>
+    body: `<p style="margin:0 0 12px;color:#3C3C3E">Someone (hopefully you) asked to reset the password for your baskt account. The link works once and expires in 1 hour.</p>
 ${button(link, "Choose a new password")}
 <p style="margin:16px 0 0;font-size:13px;color:#6E6E73">If you didn't ask for this, you can ignore this email; your password won't change.</p>`,
   });
@@ -178,7 +178,7 @@ ${button(link, "Choose a new password")}
   const text = [
     `Reset your password${first ? `, ${first}` : ""}`,
     "",
-    "Someone (hopefully you) asked to reset the password for your AfroPantry account. The link works once and expires in 1 hour:",
+    "Someone (hopefully you) asked to reset the password for your baskt account. The link works once and expires in 1 hour:",
     link,
     "",
     "If you didn't ask for this, you can ignore this email; your password won't change.",
@@ -189,23 +189,23 @@ ${button(link, "Choose a new password")}
 
 export function signupConfirmationEmail({ name, link }: { name: string | null; link: string }) {
   const first = firstName(name);
-  const subject = "Confirm your email to join AfroPantry";
+  const subject = "Confirm your email to join baskt";
 
   const html = layout({
     preheader: "One click to finish creating your account.",
-    heading: `Welcome to AfroPantry${first ? `, ${escapeHtml(first)}` : ""}!`,
+    heading: `Welcome to baskt${first ? `, ${escapeHtml(first)}` : ""}!`,
     body: `<p style="margin:0 0 12px;color:#3C3C3E">Confirm your email address to finish creating your account. The link expires in 24 hours.</p>
 ${button(link, "Confirm my email")}
-<p style="margin:16px 0 0;font-size:13px;color:#6E6E73">If you didn't sign up for AfroPantry, you can ignore this email; no account will be created.</p>`,
+<p style="margin:16px 0 0;font-size:13px;color:#6E6E73">If you didn't sign up for baskt, you can ignore this email; no account will be created.</p>`,
   });
 
   const text = [
-    `Welcome to AfroPantry${first ? `, ${first}` : ""}!`,
+    `Welcome to baskt${first ? `, ${first}` : ""}!`,
     "",
     "Confirm your email address to finish creating your account. The link expires in 24 hours:",
     link,
     "",
-    "If you didn't sign up for AfroPantry, you can ignore this email; no account will be created.",
+    "If you didn't sign up for baskt, you can ignore this email; no account will be created.",
   ].join("\n");
 
   return { subject, html, text };
