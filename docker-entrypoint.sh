@@ -22,5 +22,5 @@ if [ "$SEED_SAMPLE_DATA" = "true" ]; then
   npm run db:seed -- --if-empty || echo "  seed step reported an issue; continuing to start the app."
 fi
 
-echo "→ Starting AfroPantry on port ${PORT:-3000}..."
+echo "→ Starting baskt on port ${PORT:-3000}..."
 exec "$@"

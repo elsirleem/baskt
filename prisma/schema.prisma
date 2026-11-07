@@ -92,7 +92,7 @@ model Product {
   currency       String   @default("gbp")
   imageUrl       String
   category       String
-  brand          String? // brand / source, e.g. "AfroPantry Private Label"
+  brand          String? // brand / source, e.g. "baskt Private Label"
   isPrivateLabel Boolean  @default(false)
   size           String? // pack size shown under the name, e.g. "1kg", "5-pack"
   badges         String[] @default([]) // short highlights, e.g. "Co-op sourced"

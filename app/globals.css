@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* AfroPantry design tokens (from the app prototype). A few text shades are
+/* baskt design tokens (from the app prototype). A few text shades are
    slightly darker than the prototype so small text stays readable. */
 @theme {
   --color-brand: #1a6b3c;

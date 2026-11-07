@@ -35,7 +35,7 @@ test.describe("real Stripe test-mode payments", () => {
     await page.locator("button[type=submit]").first().click();
   }
 
-  test("buy with the test card, join AfroPlus, and open the billing portal", async ({ page }) => {
+  test("buy with the test card, join baskt Plus, and open the billing portal", async ({ page }) => {
     const product = await createTestProduct(10); // £3.00 each
     const email = testEmail("stripe");
     try {
@@ -59,12 +59,12 @@ test.describe("real Stripe test-mode payments", () => {
       expect(order.shippingPhone).toBe("+447400123456");
       expect((await db.product.findUniqueOrThrow({ where: { id: product.id } })).stock).toBe(8);
 
-      // AfroPlus membership.
+      // baskt Plus membership.
       await page.goto("/membership");
-      await page.getByRole("button", { name: /Get AfroPlus/ }).click();
+      await page.getByRole("button", { name: /Get baskt Plus/ }).click();
       await payOnStripe(page, { withAddress: false });
       await page.waitForURL(/\/account\?subscribed=1/, { timeout: 60_000 });
-      await expect(page.getByText(/Welcome to AfroPlus/)).toBeVisible();
+      await expect(page.getByText(/Welcome to baskt Plus/)).toBeVisible();
       const sub = await db.subscription.findFirstOrThrow({ where: { user: { email } } });
       expect([sub.tier, sub.status]).toEqual(["PLUS", "active"]);
 

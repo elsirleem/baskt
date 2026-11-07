@@ -1,4 +1,4 @@
-# 🧺 AfroPantry — Taste of home. African essentials, delivered.
+# 🧺 baskt — Taste of home. African essentials, delivered.
 
 A subscription-first African grocery platform for the UK diaspora: browse authentic
 staples, subscribe for member savings, cook with in-app recipes, refer friends for credit,
@@ -18,16 +18,16 @@ get a top menu.
 
 | Feature | Where |
 | --- | --- |
-| Catalogue: 28 African SKUs (7 AfroPantry private-label), pack sizes, badges, search, category tiles | `app/page.tsx`, `lib/data.ts` |
+| Catalogue: 28 African SKUs (7 baskt private-label), pack sizes, badges, search, category tiles | `app/page.tsx`, `lib/data.ts` |
 | Product pages: quantity picker, "Use in these recipes" links | `app/product/[slug]/page.tsx` |
 | Accounts: register / sign in / sign out, settings (name, password), forgot password | `app/login`, `app/register`, `app/account/settings`, `app/forgot-password`, `lib/auth.ts` |
 | **Emails** (Resend): order confirmation, "on its way" with tracking, password reset | `lib/email.ts`, `lib/email-templates.ts`, `lib/order-emails.ts` |
 | Basket: add / update qty / remove, GBP, member pricing, free-delivery progress bar | `app/cart`, `lib/actions/cart.ts` |
 | Wishlist | `app/wishlist`, `lib/actions/wishlist.ts` |
-| **Membership tiers** (Pay As You Go / AfroBasic £4.99-mo / AfroPlus £39.99-yr) via Stripe Billing | `app/membership`, `lib/billing.ts`, `lib/subscription.ts` |
-| **Member benefits**: 5%/10% off, AfroPlus free delivery, premium recipes | `lib/pricing.ts` |
+| **Membership tiers** (Pay As You Go / baskt Basic £4.99-mo / baskt Plus £39.99-yr) via Stripe Billing | `app/membership`, `lib/billing.ts`, `lib/subscription.ts` |
+| **Member benefits**: 5%/10% off, baskt Plus free delivery, premium recipes | `lib/pricing.ts` |
 | **Fresh Produce Box**: monthly subscription, 3 sizes, Mon–Wed delivery day | `app/fresh`, `lib/freshbox.ts`, `app/api/fresh/checkout` |
-| **Recipe library** with amounts, difficulty, tappable ingredients → basket (premium gated to AfroPlus) | `app/recipes`, `lib/actions/cart.ts` |
+| **Recipe library** with amounts, difficulty, tappable ingredients → basket (premium gated to baskt Plus) | `app/recipes`, `lib/actions/cart.ts` |
 | **Referral engine**: per-user code, £5 credit each way on first order | `lib/referral.ts`, `lib/orders.ts`, `app/account` |
 | Free delivery over £70 (always for Plus) | `lib/pricing.ts` |
 | Secure checkout with UK delivery address + phone, order records (discount/delivery/credit/address snapshot) | `app/api/checkout`, `app/api/webhooks/stripe` |
@@ -115,7 +115,7 @@ For emails, add a [Resend](https://resend.com) API key ("Sending access" is enou
 
 ```env
 RESEND_API_KEY="re_..."
-EMAIL_FROM="AfroPantry <onboarding@resend.dev>"
+EMAIL_FROM="baskt <onboarding@resend.dev>"
 ```
 
 Without a key, emails are logged to the terminal instead of sent. Until you verify your own
@@ -138,7 +138,7 @@ added through the admin are left alone.
 ### 4. (For memberships) provision Stripe prices
 
 ```bash
-npm run setup-stripe   # creates the AfroBasic/AfroPlus + Fresh Box prices, prints the IDs for .env
+npm run setup-stripe   # creates the baskt Basic/baskt Plus + Fresh Box prices, prints the IDs for .env
 ```
 
 ### 5. Run
@@ -163,7 +163,7 @@ In production, only ever run `db:deploy`. Never run `prisma db push`,
 use a managed Postgres with automatic backups and point-in-time recovery; take a
 backup before deploying a migration that changes or removes columns.
 
-**Databases created before migrations** (with the old `db:push` and the AfroPantry
+**Databases created before migrations** (with the old `db:push` and the AfroPantry-era
 schema) need a one-time baseline so Prisma knows the tables already exist:
 
 ```bash
@@ -228,7 +228,7 @@ show on its admin page as Sent, Failed or Not sent. Sending never throws, so a m
 can't break checkout or an admin action. Addresses on reserved test domains (`example.com`,
 `.test`, `.invalid`, `localhost`) are never emailed, which keeps test accounts out of your
 Resend quota. Before launch, [verify your domain](https://resend.com/domains) and set
-`EMAIL_FROM` to an address on it, e.g. `AfroPantry <orders@afropantry.co.uk>`.
+`EMAIL_FROM` to an address on it, e.g. `baskt <orders@baskt.co.uk>`.
 - **Docker** runs the app as the unprivileged `node` user.
 
 ## How the money works
@@ -269,7 +269,7 @@ table via `lib/subscription.ts`. Members manage or cancel through the Stripe Bil
 ## Recipes
 
 `/recipes` lists Nigerian recipes; each ingredient that maps to a stocked SKU is tappable
-(add one, or "Add all to basket"). Recipes flagged `isPremium` are gated to AfroPlus.
+(add one, or "Add all to basket"). Recipes flagged `isPremium` are gated to baskt Plus.
 
 ## Sharing a wishlist
 
@@ -339,7 +339,7 @@ once, or "Manage subscription" fails.
 | `npm test` | Unit tests: pricing and delivery rules, Fresh Box dates, formatting, input checks. No database needed. |
 | `npm run test:db` | Database tests: marking orders paid (including the webhook and success page finishing at the same moment) and attempt limits. |
 | `npm run test:e2e` | Browser tests (Playwright): shopping, accounts, admin, security limits and headers. |
-| `E2E_STRIPE=1 npm run test:e2e` | Also runs a real purchase, AfroPlus subscription and billing portal visit through Stripe's test mode (needs test keys; deletes its test customer in Stripe afterwards). |
+| `E2E_STRIPE=1 npm run test:e2e` | Also runs a real purchase, baskt Plus subscription and billing portal visit through Stripe's test mode (needs test keys; deletes its test customer in Stripe afterwards). |
 
 - **Database tests** use a separate database: your `DATABASE_URL` with `_test` added to its
   name (or `TEST_DATABASE_URL`). It's created and migrated automatically, emptied between

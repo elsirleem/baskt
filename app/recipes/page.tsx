@@ -35,7 +35,7 @@ export default async function RecipesPage() {
               />
               {recipe.isPremium && (
                 <span className="absolute right-3 top-3 rounded-full bg-gold px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink">
-                  ⭐ AfroPlus
+                  ⭐ baskt Plus
                 </span>
               )}
             </div>

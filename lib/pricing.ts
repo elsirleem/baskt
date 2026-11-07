@@ -14,8 +14,8 @@ export const TIER_DISCOUNT: Record<SubTier, number> = {
 
 export const TIER_LABEL: Record<SubTier, string> = {
   PAYG: "Pay As You Go",
-  MONTHLY: "AfroBasic",
-  PLUS: "AfroPlus",
+  MONTHLY: "baskt Basic",
+  PLUS: "baskt Plus",
 };
 
 export type OrderTotals = {

@@ -11,7 +11,7 @@ export function Logo() {
       href="/"
       className="font-display text-[22px] font-black tracking-tight text-brand md:text-2xl"
     >
-      Afro<span className="text-gold">Pantry</span>
+      bask<span className="text-gold">t</span>
     </Link>
   );
 }

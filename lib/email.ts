@@ -37,7 +37,7 @@ export function isReservedAddress(address: string): boolean {
  */
 export async function sendEmail(email: Email): Promise<SendResult> {
   const apiKey = configuredEnv(process.env.RESEND_API_KEY);
-  const from = process.env.EMAIL_FROM || "AfroPantry <onboarding@resend.dev>";
+  const from = process.env.EMAIL_FROM || "baskt <onboarding@resend.dev>";
 
   let status: SendResult;
   let providerId: string | undefined;

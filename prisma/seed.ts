@@ -22,7 +22,7 @@ const IMG = {
   snack: "https://images.unsplash.com/photo-1511381939415-e44015466834?w=600&q=80",
 };
 
-const PL = "AfroPantry Private Label";
+const PL = "baskt Private Label";
 
 type Seed = {
   slug: string;
@@ -65,19 +65,19 @@ const products: Seed[] = [
   { slug: "kuli-kuli-250g", name: "Kuli Kuli", size: "250g", badges: ["High protein"], description: "Crunchy spiced groundnut snack — high protein, perfect with garri or on its own.", priceCents: 399, category: "Breakfast", imageUrl: IMG.snack, brand: "Artisan processor" },
 
   // Soups & Oils
-  { slug: "ground-egusi-500g", name: "Ground Egusi", size: "500g", description: "Finely milled melon seeds for rich, thick egusi soup. AfroPantry private label — our highest-frequency line.", priceCents: 699, category: "Soups & Oils", imageUrl: IMG.spices, brand: PL, isPrivateLabel: true },
+  { slug: "ground-egusi-500g", name: "Ground Egusi", size: "500g", description: "Finely milled melon seeds for rich, thick egusi soup. baskt private label — our highest-frequency line.", priceCents: 699, category: "Soups & Oils", imageUrl: IMG.spices, brand: PL, isPrivateLabel: true },
   { slug: "ogbono-250g", name: "Ground Ogbono", size: "250g", description: "Ground wild mango seeds for a silky, drawing ogbono soup.", priceCents: 749, category: "Soups & Oils", imageUrl: IMG.spices, brand: "Branded" },
-  { slug: "red-palm-oil-1l", name: "Red Palm Oil", size: "1L", badges: ["Unrefined"], description: "Unrefined, vitamin-rich red palm oil with deep colour and authentic flavour. AfroPantry private label.", priceCents: 899, category: "Soups & Oils", imageUrl: IMG.oil, brand: PL, isPrivateLabel: true },
+  { slug: "red-palm-oil-1l", name: "Red Palm Oil", size: "1L", badges: ["Unrefined"], description: "Unrefined, vitamin-rich red palm oil with deep colour and authentic flavour. baskt private label.", priceCents: 899, category: "Soups & Oils", imageUrl: IMG.oil, brand: PL, isPrivateLabel: true },
   { slug: "ground-crayfish-200g", name: "Ground Crayfish", size: "200g", description: "Smoky dried crayfish, ground fine — the secret umami in soups and stews.", priceCents: 599, category: "Soups & Oils", imageUrl: IMG.spices, brand: "Specialist importer" },
 
   // Spices
   { slug: "pepper-soup-spice-100g", name: "Pepper Soup Spice", size: "100g", description: "Aromatic blend for classic Nigerian pepper soup — warming and fragrant.", priceCents: 349, category: "Spices", imageUrl: IMG.spices, brand: "Branded" },
-  { slug: "yaji-suya-spice-100g", name: "Yaji Suya Spice", size: "100g", description: "Authentic suya pepper blend with groundnut, ginger, and chilli. AfroPantry private label.", priceCents: 399, category: "Spices", imageUrl: IMG.spices, brand: PL, isPrivateLabel: true },
+  { slug: "yaji-suya-spice-100g", name: "Yaji Suya Spice", size: "100g", description: "Authentic suya pepper blend with groundnut, ginger, and chilli. baskt private label.", priceCents: 399, category: "Spices", imageUrl: IMG.spices, brand: PL, isPrivateLabel: true },
   { slug: "cameroon-pepper-100g", name: "Cameroon Pepper", size: "100g", description: "Fiery ground dried chilli — a little goes a long way.", priceCents: 449, category: "Spices", imageUrl: IMG.spices, brand: "Nigerian supplier" },
 
   // Dried Proteins
   { slug: "dried-stockfish-200g", name: "Dried Stockfish", size: "200g", description: "Premium dried cod (panla), rich in flavour for soups and stews.", priceCents: 999, category: "Dried Proteins", imageUrl: IMG.food, brand: "Specialist importer" },
-  { slug: "dried-ponmo-200g", name: "Dried Ponmo", size: "200g", description: "Dried cow skin, ready to soften for soups and pepper stews. AfroPantry private label.", priceCents: 799, category: "Dried Proteins", imageUrl: IMG.food, brand: PL, isPrivateLabel: true },
+  { slug: "dried-ponmo-200g", name: "Dried Ponmo", size: "200g", description: "Dried cow skin, ready to soften for soups and pepper stews. baskt private label.", priceCents: 799, category: "Dried Proteins", imageUrl: IMG.food, brand: PL, isPrivateLabel: true },
 
   // Snacks & Pantry
   { slug: "plantain-chips-150g", name: "Plantain Chips", size: "150g", description: "Crispy salted plantain crisps — the perfect savoury snack.", priceCents: 249, category: "Snacks", imageUrl: IMG.plantain, brand: "Branded" },
@@ -206,7 +206,7 @@ async function main() {
 
   // Adds the sample products and resets them to these defaults; products added
   // through the admin are left alone.
-  console.log("Seeding AfroPantry catalogue...");
+  console.log("Seeding baskt catalogue...");
 
   for (const p of products) {
     await prisma.product.upsert({

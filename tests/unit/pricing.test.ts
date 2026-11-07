@@ -27,11 +27,11 @@ describe("computeTotals", () => {
     expect(totals.totalCents).toBe(6840 + DELIVERY_FEE_CENTS);
   });
 
-  test("AfroBasic gets 5% off, rounded to the nearest penny", () => {
+  test("baskt Basic gets 5% off, rounded to the nearest penny", () => {
     expect(computeTotals({ subtotalCents: 333, tier: "MONTHLY" }).discountCents).toBe(17);
   });
 
-  test("AfroPlus gets 10% off and free delivery on any basket", () => {
+  test("baskt Plus gets 10% off and free delivery on any basket", () => {
     const totals = computeTotals({ subtotalCents: 1000, tier: "PLUS" });
     expect(totals.discountCents).toBe(100);
     expect(totals.deliveryCents).toBe(0);
@@ -61,10 +61,10 @@ describe("computeTotals", () => {
   });
 });
 
-test("plan names match the AfroPantry branding", () => {
+test("membership plans keep their display names", () => {
   expect(TIER_LABEL).toEqual({
     PAYG: "Pay As You Go",
-    MONTHLY: "AfroBasic",
-    PLUS: "AfroPlus",
+    MONTHLY: "baskt Basic",
+    PLUS: "baskt Plus",
   });
 });

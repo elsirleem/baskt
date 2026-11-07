@@ -38,7 +38,7 @@ describe("reserved test addresses are never emailed", () => {
     expect(isReservedAddress(address)).toBe(true);
   });
 
-  test.each(["ada@gmail.com", "orders@afropantry.co.uk", "x@example-shop.com"])(
+  test.each(["ada@gmail.com", "orders@baskt.co.uk", "x@example-shop.com"])(
     "%s is a real address",
     (address) => {
       expect(isReservedAddress(address)).toBe(false);
@@ -53,10 +53,10 @@ test("escapeHtml neutralises markup", () => {
 });
 
 describe("order confirmation", () => {
-  const email = orderConfirmationEmail({ order, name: "Ada Obi", appUrl: "https://afropantry.test" });
+  const email = orderConfirmationEmail({ order, name: "Ada Obi", appUrl: "https://baskt.test" });
 
   test("names the order in the subject", () => {
-    expect(email.subject).toBe("Your AfroPantry order #OPQRSTUV is confirmed");
+    expect(email.subject).toBe("Your baskt order #OPQRSTUV is confirmed");
   });
 
   test("lists items, totals and the delivery address", () => {
@@ -65,7 +65,7 @@ describe("order confirmation", () => {
     expect(email.text).toContain("Delivery: Free");
     expect(email.text).toContain("Total paid: £14.37");
     expect(email.text).toContain("1 High Street");
-    expect(email.text).toContain("Track your order: https://afropantry.test/orders");
+    expect(email.text).toContain("Track your order: https://baskt.test/orders");
     expect(email.html).toContain("Thanks for your order, Ada!");
   });
 
@@ -83,9 +83,9 @@ describe("shipped", () => {
       name: "Ada Obi",
       carrier: "DPD",
       trackingNumber: "DPD123456",
-      appUrl: "https://afropantry.test",
+      appUrl: "https://baskt.test",
     });
-    expect(email.subject).toBe("Your AfroPantry order #OPQRSTUV is on its way");
+    expect(email.subject).toBe("Your baskt order #OPQRSTUV is on its way");
     expect(email.text).toContain("It's been sent with DPD.");
     expect(email.text).toContain("Tracking number: DPD123456");
   });
@@ -97,19 +97,19 @@ describe("shipped", () => {
 });
 
 test("password reset email carries the link and says it expires", () => {
-  const email = passwordResetEmail({ name: "Ada Obi", link: "https://afropantry.test/reset-password?token=abc" });
-  expect(email.subject).toBe("Reset your AfroPantry password");
-  expect(email.text).toContain("https://afropantry.test/reset-password?token=abc");
+  const email = passwordResetEmail({ name: "Ada Obi", link: "https://baskt.test/reset-password?token=abc" });
+  expect(email.subject).toBe("Reset your baskt password");
+  expect(email.text).toContain("https://baskt.test/reset-password?token=abc");
   expect(email.text).toContain("expires in 1 hour");
-  expect(email.html).toContain('href="https://afropantry.test/reset-password?token=abc"');
+  expect(email.html).toContain('href="https://baskt.test/reset-password?token=abc"');
 });
 
 test("sign-up email carries the link and says nothing happens if ignored", () => {
-  const email = signupConfirmationEmail({ name: "Ada <Obi>", link: "https://afropantry.test/confirm-email?token=abc" });
-  expect(email.subject).toBe("Confirm your email to join AfroPantry");
-  expect(email.text).toContain("https://afropantry.test/confirm-email?token=abc");
+  const email = signupConfirmationEmail({ name: "Ada <Obi>", link: "https://baskt.test/confirm-email?token=abc" });
+  expect(email.subject).toBe("Confirm your email to join baskt");
+  expect(email.text).toContain("https://baskt.test/confirm-email?token=abc");
   expect(email.text).toContain("expires in 24 hours");
   expect(email.text).toContain("no account will be created");
-  expect(email.html).toContain('href="https://afropantry.test/confirm-email?token=abc"');
-  expect(email.html).toContain("Welcome to AfroPantry, Ada!");
+  expect(email.html).toContain('href="https://baskt.test/confirm-email?token=abc"');
+  expect(email.html).toContain("Welcome to baskt, Ada!");
 });

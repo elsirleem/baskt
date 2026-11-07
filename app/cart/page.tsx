@@ -96,7 +96,7 @@ export default async function CartPage() {
               <span className="font-semibold text-brand">
                 🚚{" "}
                 {isPlus
-                  ? "Free delivery — an AfroPlus perk"
+                  ? "Free delivery — a baskt Plus perk"
                   : remainingCents > 0
                     ? `${formatPrice(remainingCents)} away from free delivery`
                     : "You've unlocked free delivery"}
@@ -244,7 +244,7 @@ export default async function CartPage() {
           {tier === "PAYG" && (
             <p className="mt-3 text-xs text-ink-soft">
               <Link href="/membership" className="font-semibold text-brand hover:underline">
-                Join AfroPlus
+                Join baskt Plus
               </Link>{" "}
               for 10% off and free delivery on every order.
             </p>
